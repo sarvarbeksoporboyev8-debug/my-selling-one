@@ -3,6 +3,7 @@ import 'package:dw_api/dw_api.dart';
 import 'package:dw_domain/dw_domain.dart';
 
 import 'api_provider.dart';
+import 'demo_data_provider.dart';
 
 /// Auth state provider
 final authStateProvider = StateNotifierProvider<AuthNotifier, AsyncValue<User?>>((ref) {
@@ -58,6 +59,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
   }
 
   Future<void> logout() async {
+    isDemoMode = false;
     await _apiClient.logout();
     state = const AsyncValue.data(null);
   }
@@ -66,6 +68,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     state = const AsyncValue.loading();
     // Simulate network delay
     await Future.delayed(const Duration(milliseconds: 500));
+    // Enable demo mode
+    isDemoMode = true;
     // Create demo user
     state = AsyncValue.data(User(
       id: 0,

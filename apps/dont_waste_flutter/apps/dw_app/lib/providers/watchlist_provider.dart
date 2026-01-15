@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dw_domain/dw_domain.dart';
 
+import 'demo_data_provider.dart';
+
 /// Watchlist provider - local-only implementation
 /// Note: Backend watchlist API not yet available
 final watchlistProvider = StateNotifierProvider<WatchlistNotifier, AsyncValue<List<WatchlistItem>>>((ref) {
@@ -10,10 +12,22 @@ final watchlistProvider = StateNotifierProvider<WatchlistNotifier, AsyncValue<Li
 class WatchlistNotifier extends StateNotifier<AsyncValue<List<WatchlistItem>>> {
   final List<WatchlistItem> _items = [];
 
-  WatchlistNotifier() : super(const AsyncValue.data([]));
+  WatchlistNotifier() : super(const AsyncValue.data([])) {
+    _loadInitialData();
+  }
+
+  void _loadInitialData() {
+    if (isDemoMode) {
+      _items.addAll(demoWatchlist);
+      state = AsyncValue.data(List.from(_items));
+    }
+  }
 
   Future<void> loadWatchlist() async {
-    state = AsyncValue.data(_items);
+    if (isDemoMode && _items.isEmpty) {
+      _items.addAll(demoWatchlist);
+    }
+    state = AsyncValue.data(List.from(_items));
   }
 
   Future<void> addToWatchlist(SurplusListing listing) async {

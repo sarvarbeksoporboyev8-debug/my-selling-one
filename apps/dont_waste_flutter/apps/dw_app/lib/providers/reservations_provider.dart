@@ -3,6 +3,7 @@ import 'package:dw_api/dw_api.dart';
 import 'package:dw_domain/dw_domain.dart';
 
 import 'api_provider.dart';
+import 'demo_data_provider.dart';
 
 /// User reservations provider
 final reservationsProvider = StateNotifierProvider<ReservationsNotifier, AsyncValue<List<Reservation>>>((ref) {
@@ -19,6 +20,14 @@ class ReservationsNotifier extends StateNotifier<AsyncValue<List<Reservation>>> 
 
   Future<void> loadReservations() async {
     state = const AsyncValue.loading();
+    
+    // Use demo data if in demo mode
+    if (isDemoMode) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      state = AsyncValue.data(List.from(demoReservations));
+      return;
+    }
+    
     try {
       final reservations = await _apiClient.getMyReservations();
       state = AsyncValue.data(reservations.map(_mapReservation).toList());

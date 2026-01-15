@@ -4,6 +4,7 @@ import 'package:dw_domain/dw_domain.dart';
 
 import 'api_provider.dart';
 import 'filters_provider.dart';
+import 'demo_data_provider.dart';
 
 /// Listings search provider
 final listingsProvider = StateNotifierProvider<ListingsNotifier, AsyncValue<ListingsState>>((ref) {
@@ -56,6 +57,19 @@ class ListingsNotifier extends StateNotifier<AsyncValue<ListingsState>> {
 
   Future<void> loadListings() async {
     state = const AsyncValue.loading();
+    
+    // Use demo data if in demo mode
+    if (isDemoMode) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      state = AsyncValue.data(ListingsState(
+        listings: demoListings,
+        currentPage: 1,
+        totalPages: 1,
+        hasMore: false,
+      ));
+      return;
+    }
+    
     try {
       final result = await _fetchListings(page: 1);
       state = AsyncValue.data(ListingsState(
@@ -128,6 +142,15 @@ class ListingsNotifier extends StateNotifier<AsyncValue<ListingsState>> {
 
 /// Single listing detail provider
 final listingDetailProvider = FutureProvider.family<SurplusListing, int>((ref, id) async {
+  // Use demo data if in demo mode
+  if (isDemoMode) {
+    await Future.delayed(const Duration(milliseconds: 200));
+    return demoListings.firstWhere(
+      (l) => l.id == id,
+      orElse: () => demoListings.first,
+    );
+  }
+  
   final apiClient = ref.watch(apiClientProvider);
   final dto = await apiClient.getListing(id);
   return ListingMapper.fromDto(dto);
@@ -135,6 +158,12 @@ final listingDetailProvider = FutureProvider.family<SurplusListing, int>((ref, i
 
 /// Taxons provider
 final taxonsProvider = FutureProvider<List<Taxon>>((ref) async {
+  // Use demo data if in demo mode
+  if (isDemoMode) {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return demoTaxons;
+  }
+  
   final apiClient = ref.watch(apiClientProvider);
   final dtos = await apiClient.getTaxons();
   return dtos.map(ListingMapper.taxonFromDto).toList();
