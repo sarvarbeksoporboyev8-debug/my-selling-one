@@ -32,18 +32,15 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Install Melos
-        run: dart pub global activate melos
+      - name: Install dependencies (includes Melos)
+        run: dart pub get
 
       - name: Bootstrap packages
-        run: melos bootstrap
-
-      - name: Run build_runner
-        run: melos run build_runner
+        run: dart run melos bootstrap
 
       - name: Build APK (release)
         working-directory: apps/dont_waste_flutter/apps/dw_app
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
