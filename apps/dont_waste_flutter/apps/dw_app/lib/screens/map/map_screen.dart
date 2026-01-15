@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -241,7 +241,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
@@ -289,7 +289,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF2D2D44).withOpacity(0.9),
@@ -323,7 +323,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             width: 48,
             height: 48,
@@ -366,7 +366,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -502,7 +502,7 @@ class _TrianglePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color..style = PaintingStyle.fill;
-    final path = Path()
+    final path = ui.Path()
       ..moveTo(size.width / 2, size.height)
       ..lineTo(0, 0)
       ..lineTo(size.width, 0)
