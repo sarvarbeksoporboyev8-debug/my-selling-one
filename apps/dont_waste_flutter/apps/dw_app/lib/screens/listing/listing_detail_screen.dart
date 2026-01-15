@@ -51,7 +51,10 @@ class ListingDetailScreen extends ConsumerWidget {
                     if (isInWatchlist) {
                       ref.read(watchlistProvider.notifier).removeFromWatchlist(listingId);
                     } else {
-                      ref.read(watchlistProvider.notifier).addToWatchlist(listingId);
+                      final listing = ref.read(listingDetailProvider(listingId)).valueOrNull;
+                      if (listing != null) {
+                        ref.read(watchlistProvider.notifier).addToWatchlist(listing);
+                      }
                     }
                   },
                 ),

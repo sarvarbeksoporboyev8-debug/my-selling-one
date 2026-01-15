@@ -62,25 +62,6 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     state = const AsyncValue.data(null);
   }
 
-  Future<void> register({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
-    state = const AsyncValue.loading();
-    try {
-      final response = await _apiClient.register(name, email, password);
-      state = AsyncValue.data(UserMapper.fromDto(response.user));
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow;
-    }
-  }
-
-  Future<void> requestPasswordReset({required String email}) async {
-    await _apiClient.requestPasswordReset(email);
-  }
-
   Future<void> updateProfile({
     String? name,
     String? phone,

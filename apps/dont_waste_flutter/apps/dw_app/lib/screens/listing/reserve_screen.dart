@@ -35,8 +35,7 @@ class _ReserveScreenState extends ConsumerState<ReserveScreen> {
       final reservation = await ref.read(reservationsProvider.notifier).createReservation(
             listingId: widget.listingId,
             quantity: _quantity,
-            message: _messageController.text.isNotEmpty ? _messageController.text : null,
-            preferredPickupTime: _preferredPickupTime,
+            notes: _messageController.text.isNotEmpty ? _messageController.text : null,
           );
 
       if (mounted) {

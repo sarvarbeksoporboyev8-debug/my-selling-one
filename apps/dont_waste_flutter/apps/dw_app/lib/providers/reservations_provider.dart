@@ -61,25 +61,45 @@ class ReservationsNotifier extends StateNotifier<AsyncValue<List<Reservation>>> 
   Reservation _mapReservation(ReservationDto dto) {
     // Create a minimal listing from the compact DTO if available
     final listingDto = dto.listing;
+    final now = DateTime.now();
     final listing = listingDto != null
         ? SurplusListing(
             id: listingDto.id,
-            title: listingDto.title ?? 'Unknown',
-            price: listingDto.currentPrice,
-            quantity: 0,
+            title: listingDto.title,
+            quantityAvailable: 0,
             unit: listingDto.unit,
+            basePrice: listingDto.basePrice,
+            currentPrice: listingDto.currentPrice,
+            currency: 'USD',
             expiresAt: listingDto.expiresAt,
+            pickupStartAt: now,
+            pickupEndAt: listingDto.expiresAt,
             status: listingDto.status,
-            enterpriseName: listingDto.enterpriseName,
+            visibility: 'public',
+            enterprise: EnterpriseSummary(
+              id: 0,
+              name: listingDto.enterpriseName ?? 'Unknown',
+            ),
+            variant: VariantSummary(
+              id: 0,
+              name: listingDto.variantName,
+            ),
           )
         : SurplusListing(
             id: 0,
             title: 'Unknown',
-            price: 0,
-            quantity: 0,
+            quantityAvailable: 0,
             unit: 'unit',
-            expiresAt: DateTime.now(),
+            basePrice: 0,
+            currentPrice: 0,
+            currency: 'USD',
+            expiresAt: now,
+            pickupStartAt: now,
+            pickupEndAt: now,
             status: 'unknown',
+            visibility: 'public',
+            enterprise: const EnterpriseSummary(id: 0, name: 'Unknown'),
+            variant: const VariantSummary(id: 0),
           );
 
     return Reservation(
@@ -111,4 +131,16 @@ final pendingReservationsCountProvider = Provider<int>((ref) {
     data: (items) => items.where((r) => r.status == ReservationStatus.pending).length,
     orElse: () => 0,
   );
+});
+
+/// Single reservation detail provider
+final reservationDetailProvider = Provider.family<AsyncValue<Reservation>, int>((ref, id) {
+  final reservations = ref.watch(reservationsProvider);
+  return reservations.whenData((items) {
+    final reservation = items.where((r) => r.id == id).firstOrNull;
+    if (reservation == null) {
+      throw Exception('Reservation not found');
+    }
+    return reservation;
+  });
 });

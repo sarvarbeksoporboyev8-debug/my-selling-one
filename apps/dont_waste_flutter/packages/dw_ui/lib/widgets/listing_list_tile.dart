@@ -73,7 +73,7 @@ class DwListingListTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      listing.title,
+                      listing.safeTitle,
                       style: DwTextStyles.titleSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

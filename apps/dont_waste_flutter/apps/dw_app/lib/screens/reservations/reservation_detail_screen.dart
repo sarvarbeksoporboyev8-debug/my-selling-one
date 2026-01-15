@@ -138,32 +138,10 @@ class _ReservationDetailContent extends ConsumerWidget {
   }
 
   Future<void> _confirmPickup(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Pickup'),
-        content: const Text('Have you picked up this order?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
+    // Pickup confirmation not yet available in API
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pickup confirmation coming soon')),
     );
-
-    if (confirmed == true) {
-      await ref.read(reservationsProvider.notifier).confirmPickup(reservation.id);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pickup confirmed!')),
-        );
-      }
-    }
   }
 
   Future<void> _cancelReservation(BuildContext context, WidgetRef ref) async {
