@@ -230,11 +230,87 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ],
                 ),
+
+                const SizedBox(height: DwSpacing.xl),
+
+                // Developer login option
+                TextButton(
+                  onPressed: () => _showDevLoginDialog(),
+                  child: Text(
+                    'Developer Login (Token)',
+                    style: DwTextStyles.bodySmall.copyWith(
+                      color: DwColors.textSecondary,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _showDevLoginDialog() async {
+    final tokenController = TextEditingController();
+    
+    final token = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Developer Login'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter your API token to login directly.',
+              style: DwTextStyles.bodySmall.copyWith(
+                color: DwColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: DwSpacing.md),
+            TextField(
+              controller: tokenController,
+              decoration: const InputDecoration(
+                labelText: 'API Token',
+                hintText: 'Paste your token here',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, tokenController.text.trim()),
+            child: const Text('Login'),
+          ),
+        ],
+      ),
+    );
+
+    if (token != null && token.isNotEmpty) {
+      setState(() => _isLoading = true);
+      try {
+        await ref.read(authStateProvider.notifier).setToken(token);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Invalid token: $e'),
+              backgroundColor: DwColors.error,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
   }
 }
