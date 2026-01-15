@@ -5,9 +5,7 @@ on:
   push:
     paths:
       - 'apps/dont_waste_flutter/**'
-    branches:
-      - main
-      - develop
+      - '.github/workflows/flutter-build-apk.yml'
 
 jobs:
   build-apk:
