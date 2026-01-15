@@ -1,19 +1,31 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+class PaginationDto {
+  final int page;
+  final int perPage;
+  final int totalCount;
+  final int totalPages;
 
-part 'pagination_dto.freezed.dart';
-part 'pagination_dto.g.dart';
+  const PaginationDto({
+    required this.page,
+    required this.perPage,
+    required this.totalCount,
+    required this.totalPages,
+  });
 
-@freezed
-class PaginationDto with _$PaginationDto {
-  const factory PaginationDto({
-    required int page,
-    @JsonKey(name: 'per_page') required int perPage,
-    @JsonKey(name: 'total_count') required int totalCount,
-    @JsonKey(name: 'total_pages') required int totalPages,
-  }) = _PaginationDto;
+  factory PaginationDto.fromJson(Map<String, dynamic> json) {
+    return PaginationDto(
+      page: json['page'] as int? ?? 1,
+      perPage: json['per_page'] as int? ?? 20,
+      totalCount: json['total_count'] as int? ?? 0,
+      totalPages: json['total_pages'] as int? ?? 1,
+    );
+  }
 
-  factory PaginationDto.fromJson(Map<String, dynamic> json) =>
-      _$PaginationDtoFromJson(json);
+  Map<String, dynamic> toJson() => {
+    'page': page,
+    'per_page': perPage,
+    'total_count': totalCount,
+    'total_pages': totalPages,
+  };
 }
 
 class PaginatedResponse<T> {

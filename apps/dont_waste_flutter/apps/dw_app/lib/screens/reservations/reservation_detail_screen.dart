@@ -232,6 +232,11 @@ class _StatusCard extends StatelessWidget {
           DwColors.textSecondary,
           'Reservation expired',
         ),
+      _ => (
+          Icons.help_outline,
+          DwColors.textSecondary,
+          'Unknown status',
+        ),
     };
 
     return Container(

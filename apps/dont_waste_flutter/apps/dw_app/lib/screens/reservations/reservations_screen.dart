@@ -190,6 +190,7 @@ class _StatusBadge extends StatelessWidget {
       ReservationStatus.completed => (DwColors.success, DwColors.successLight),
       ReservationStatus.cancelled => (DwColors.error, DwColors.errorLight),
       ReservationStatus.expired => (DwColors.textSecondary, DwColors.surface),
+      _ => (DwColors.textSecondary, DwColors.surface),
     };
 
     return Container(

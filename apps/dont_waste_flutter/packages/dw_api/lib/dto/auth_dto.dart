@@ -1,41 +1,83 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+class AuthResponseDto {
+  final String token;
+  final UserDto user;
 
-part 'auth_dto.freezed.dart';
-part 'auth_dto.g.dart';
+  const AuthResponseDto({
+    required this.token,
+    required this.user,
+  });
 
-@freezed
-class AuthResponseDto with _$AuthResponseDto {
-  const factory AuthResponseDto({
-    required String token,
-    required UserDto user,
-  }) = _AuthResponseDto;
+  factory AuthResponseDto.fromJson(Map<String, dynamic> json) {
+    return AuthResponseDto(
+      token: json['token'] as String,
+      user: UserDto.fromJson(json['user'] as Map<String, dynamic>),
+    );
+  }
 
-  factory AuthResponseDto.fromJson(Map<String, dynamic> json) =>
-      _$AuthResponseDtoFromJson(json);
+  Map<String, dynamic> toJson() => {
+    'token': token,
+    'user': user.toJson(),
+  };
 }
 
-@freezed
-class UserDto with _$UserDto {
-  const factory UserDto({
-    required int id,
-    required String email,
-    @JsonKey(name: 'first_name') String? firstName,
-    @JsonKey(name: 'last_name') String? lastName,
-    @JsonKey(name: 'spree_api_key') String? spreeApiKey,
-    @JsonKey(name: 'created_at') DateTime? createdAt,
-  }) = _UserDto;
+class UserDto {
+  final int id;
+  final String email;
+  final String? firstName;
+  final String? lastName;
+  final String? spreeApiKey;
+  final DateTime? createdAt;
 
-  factory UserDto.fromJson(Map<String, dynamic> json) =>
-      _$UserDtoFromJson(json);
+  const UserDto({
+    required this.id,
+    required this.email,
+    this.firstName,
+    this.lastName,
+    this.spreeApiKey,
+    this.createdAt,
+  });
+
+  factory UserDto.fromJson(Map<String, dynamic> json) {
+    return UserDto(
+      id: json['id'] as int,
+      email: json['email'] as String,
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
+      spreeApiKey: json['spree_api_key'] as String?,
+      createdAt: json['created_at'] != null 
+          ? DateTime.tryParse(json['created_at'] as String)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'email': email,
+    'first_name': firstName,
+    'last_name': lastName,
+    'spree_api_key': spreeApiKey,
+    'created_at': createdAt?.toIso8601String(),
+  };
 }
 
-@freezed
-class LoginRequestDto with _$LoginRequestDto {
-  const factory LoginRequestDto({
-    required String email,
-    required String password,
-  }) = _LoginRequestDto;
+class LoginRequestDto {
+  final String email;
+  final String password;
 
-  factory LoginRequestDto.fromJson(Map<String, dynamic> json) =>
-      _$LoginRequestDtoFromJson(json);
+  const LoginRequestDto({
+    required this.email,
+    required this.password,
+  });
+
+  factory LoginRequestDto.fromJson(Map<String, dynamic> json) {
+    return LoginRequestDto(
+      email: json['email'] as String,
+      password: json['password'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'email': email,
+    'password': password,
+  };
 }
