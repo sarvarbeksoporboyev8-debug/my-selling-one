@@ -49,11 +49,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(authStateProvider.notifier).register(
-            name: _nameController.text.trim(),
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+      // Registration API not yet available
+      // For now, show a message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration coming soon. Please use developer login.'),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
