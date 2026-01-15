@@ -38,6 +38,10 @@ jobs:
       - name: Bootstrap packages
         run: dart run melos bootstrap
 
+      - name: Get dependencies for dw_app
+        working-directory: apps/dont_waste_flutter/apps/dw_app
+        run: flutter pub get
+
       - name: Build APK (release)
         working-directory: apps/dont_waste_flutter/apps/dw_app
         run: flutter build apk --release --no-tree-shake-icons

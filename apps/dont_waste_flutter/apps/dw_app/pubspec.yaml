@@ -64,5 +64,3 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-
-  generate: true
