@@ -1,68 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dw_api/dw_api.dart';
 import 'package:dw_domain/dw_domain.dart';
 
-import 'api_provider.dart';
-
-/// Watchlist provider
+/// Watchlist provider - local-only implementation
+/// Note: Backend watchlist API not yet available
 final watchlistProvider = StateNotifierProvider<WatchlistNotifier, AsyncValue<List<WatchlistItem>>>((ref) {
-  final apiClient = ref.watch(apiClientProvider);
-  return WatchlistNotifier(apiClient);
+  return WatchlistNotifier();
 });
 
 class WatchlistNotifier extends StateNotifier<AsyncValue<List<WatchlistItem>>> {
-  final ApiClient _apiClient;
+  final List<WatchlistItem> _items = [];
 
-  WatchlistNotifier(this._apiClient) : super(const AsyncValue.loading()) {
-    loadWatchlist();
-  }
+  WatchlistNotifier() : super(const AsyncValue.data([]));
 
   Future<void> loadWatchlist() async {
-    state = const AsyncValue.loading();
-    try {
-      final response = await _apiClient.getWatchlist();
-      final items = response.items.map(_mapWatchlistItem).toList();
-      state = AsyncValue.data(items);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
+    state = AsyncValue.data(_items);
   }
 
-  Future<void> addToWatchlist(int listingId) async {
-    try {
-      final dto = await _apiClient.addToWatchlist(listingId);
-      final item = _mapWatchlistItem(dto);
-
-      state.whenData((items) {
-        state = AsyncValue.data([...items, item]);
-      });
-    } catch (e) {
-      rethrow;
-    }
+  Future<void> addToWatchlist(SurplusListing listing) async {
+    final item = WatchlistItem(
+      id: DateTime.now().millisecondsSinceEpoch,
+      listing: listing,
+      addedAt: DateTime.now(),
+    );
+    _items.add(item);
+    state = AsyncValue.data(List.from(_items));
   }
 
   Future<void> removeFromWatchlist(int listingId) async {
-    try {
-      await _apiClient.removeFromWatchlist(listingId);
-
-      state.whenData((items) {
-        state = AsyncValue.data(
-          items.where((item) => item.listing.id != listingId).toList(),
-        );
-      });
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  WatchlistItem _mapWatchlistItem(WatchlistItemDto dto) {
-    return WatchlistItem(
-      id: dto.id,
-      listing: ListingMapper.fromDto(dto.listing),
-      addedAt: dto.addedAt,
-      notifyOnPriceChange: dto.notifyOnPriceChange,
-      notifyOnLowStock: dto.notifyOnLowStock,
-    );
+    _items.removeWhere((item) => item.listing.id == listingId);
+    state = AsyncValue.data(List.from(_items));
   }
 }
 

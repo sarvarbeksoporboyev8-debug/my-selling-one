@@ -20,9 +20,8 @@ class ReservationsNotifier extends StateNotifier<AsyncValue<List<Reservation>>> 
   Future<void> loadReservations() async {
     state = const AsyncValue.loading();
     try {
-      final response = await _apiClient.getMyReservations();
-      final reservations = response.items.map(_mapReservation).toList();
-      state = AsyncValue.data(reservations);
+      final reservations = await _apiClient.getMyReservations();
+      state = AsyncValue.data(reservations.map(_mapReservation).toList());
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -31,15 +30,9 @@ class ReservationsNotifier extends StateNotifier<AsyncValue<List<Reservation>>> 
   Future<Reservation> createReservation({
     required int listingId,
     required double quantity,
-    String? message,
-    DateTime? preferredPickupTime,
+    String? notes,
   }) async {
-    final dto = await _apiClient.createReservation(
-      listingId: listingId,
-      quantity: quantity,
-      message: message,
-      preferredPickupTime: preferredPickupTime,
-    );
+    final dto = await _apiClient.reserveListing(listingId, quantity);
 
     final reservation = _mapReservation(dto);
 
@@ -65,33 +58,39 @@ class ReservationsNotifier extends StateNotifier<AsyncValue<List<Reservation>>> 
     });
   }
 
-  Future<void> confirmPickup(int reservationId) async {
-    await _apiClient.confirmPickup(reservationId);
-
-    state.whenData((reservations) {
-      state = AsyncValue.data(
-        reservations.map((r) {
-          if (r.id == reservationId) {
-            return r.copyWith(status: ReservationStatus.completed);
-          }
-          return r;
-        }).toList(),
-      );
-    });
-  }
-
   Reservation _mapReservation(ReservationDto dto) {
+    // Create a minimal listing from the compact DTO if available
+    final listingDto = dto.listing;
+    final listing = listingDto != null
+        ? SurplusListing(
+            id: listingDto.id,
+            title: listingDto.title ?? 'Unknown',
+            price: listingDto.currentPrice,
+            quantity: 0,
+            unit: listingDto.unit,
+            expiresAt: listingDto.expiresAt,
+            status: listingDto.status,
+            enterpriseName: listingDto.enterpriseName,
+          )
+        : SurplusListing(
+            id: 0,
+            title: 'Unknown',
+            price: 0,
+            quantity: 0,
+            unit: 'unit',
+            expiresAt: DateTime.now(),
+            status: 'unknown',
+          );
+
     return Reservation(
       id: dto.id,
-      listing: ListingMapper.fromDto(dto.listing),
+      listing: listing,
       quantity: dto.quantity,
-      totalPrice: dto.totalPrice,
+      totalPrice: dto.totalPrice ?? (dto.quantity * dto.priceAtReservation),
       status: ReservationStatus.fromString(dto.status),
-      message: dto.message,
-      preferredPickupTime: dto.preferredPickupTime,
-      confirmedPickupTime: dto.confirmedPickupTime,
-      createdAt: dto.createdAt,
-      expiresAt: dto.expiresAt,
+      message: dto.notes,
+      createdAt: dto.createdAt ?? DateTime.now(),
+      expiresAt: dto.reservedUntil,
     );
   }
 }
@@ -111,23 +110,5 @@ final pendingReservationsCountProvider = Provider<int>((ref) {
   return reservations.maybeWhen(
     data: (items) => items.where((r) => r.status == ReservationStatus.pending).length,
     orElse: () => 0,
-  );
-});
-
-/// Single reservation detail provider
-final reservationDetailProvider = FutureProvider.family<Reservation, int>((ref, id) async {
-  final apiClient = ref.watch(apiClientProvider);
-  final dto = await apiClient.getReservation(id);
-  return Reservation(
-    id: dto.id,
-    listing: ListingMapper.fromDto(dto.listing),
-    quantity: dto.quantity,
-    totalPrice: dto.totalPrice,
-    status: ReservationStatus.fromString(dto.status),
-    message: dto.message,
-    preferredPickupTime: dto.preferredPickupTime,
-    confirmedPickupTime: dto.confirmedPickupTime,
-    createdAt: dto.createdAt,
-    expiresAt: dto.expiresAt,
   );
 });
