@@ -17,6 +17,7 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   final _scrollController = ScrollController();
+  String _selectedCategory = 'all';
 
   @override
   void initState() {
@@ -31,8 +32,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       ref.read(listingsProvider.notifier).loadMore();
     }
   }
@@ -44,7 +44,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: const Color(0xFFF5F6FA),
         body: SafeArea(
           child: listings.when(
             data: (state) => _buildContent(state),
@@ -59,53 +59,32 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildContent(ListingsState state) {
     return RefreshIndicator(
       onRefresh: () => ref.read(listingsProvider.notifier).refresh(),
-      color: const Color(0xFF2D6A4F),
+      color: const Color(0xFF1E3A5F),
       child: CustomScrollView(
         controller: _scrollController,
         slivers: [
-          // Header
           SliverToBoxAdapter(child: _buildHeader()),
-
-          // Search Bar
           SliverToBoxAdapter(child: _buildSearchBar()),
-
-          // Categories
           SliverToBoxAdapter(child: _buildCategories()),
-
-          // Featured Section
           if (state.listings.isNotEmpty)
-            SliverToBoxAdapter(
-              child: _buildFeaturedSection(state.listings.take(3).toList()),
-            ),
-
-          // Section Title
-          SliverToBoxAdapter(child: _buildSectionTitle('Near You')),
-
-          // Listings Grid
+            SliverToBoxAdapter(child: _buildFeaturedSection(state.listings.take(3).toList())),
+          SliverToBoxAdapter(child: _buildSectionTitle('Available Near You', '${state.listings.length} listings')),
           state.listings.isEmpty
               ? SliverToBoxAdapter(child: _buildEmptyState())
               : SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: SliverGrid(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 0.68,
+                      crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.68,
                     ),
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        if (index >= state.listings.length) {
-                          return _buildCardSkeleton();
-                        }
-                        return _buildListingCard(state.listings[index]);
-                      },
+                      (context, index) => index >= state.listings.length
+                          ? _buildCardSkeleton()
+                          : _buildListingCard(state.listings[index]),
                       childCount: state.listings.length + (state.isLoadingMore ? 2 : 0),
                     ),
                   ),
                 ),
-
-          // Bottom Padding
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
@@ -114,8 +93,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildHeader() {
     final user = ref.watch(currentUserProvider);
-    
-    return Padding(
+    return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Row(
         children: [
@@ -123,43 +101,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _getGreeting(),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(_getGreeting(), style: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.w500)),
                 const SizedBox(height: 4),
-                Text(
-                  user?.name ?? 'Food Saver',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1B4332),
-                  ),
-                ),
+                Text(user?.name ?? 'Business User',
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F))),
               ],
             ),
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: Colors.white, borderRadius: BorderRadius.circular(14),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 2))],
             ),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              color: const Color(0xFF1B4332),
-              onPressed: () {},
-            ),
+            child: IconButton(icon: const Icon(Icons.notifications_outlined), color: const Color(0xFF1E3A5F), onPressed: () {}),
           ),
         ],
       ),
@@ -179,41 +133,21 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: GestureDetector(
         onTap: () => context.push(AppRoutes.search),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: Colors.white, borderRadius: BorderRadius.circular(14),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 2))],
           ),
           child: Row(
             children: [
               Icon(Icons.search, color: Colors.grey[400], size: 22),
               const SizedBox(width: 12),
-              Text(
-                'Search for food deals...',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 16,
-                ),
-              ),
+              Text('Search surplus inventory...', style: TextStyle(color: Colors.grey[400], fontSize: 15)),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2D6A4F).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.tune,
-                  color: Color(0xFF2D6A4F),
-                  size: 18,
-                ),
+                decoration: BoxDecoration(color: const Color(0xFF1E3A5F).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.tune, color: Color(0xFF1E3A5F), size: 18),
               ),
             ],
           ),
@@ -224,50 +158,49 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildCategories() {
     final categories = [
-      {'icon': Icons.bakery_dining, 'label': 'Bakery', 'color': const Color(0xFFFFE4C9)},
-      {'icon': Icons.local_florist, 'label': 'Produce', 'color': const Color(0xFFD4EDDA)},
-      {'icon': Icons.egg_alt, 'label': 'Dairy', 'color': const Color(0xFFFFF3CD)},
-      {'icon': Icons.set_meal, 'label': 'Meals', 'color': const Color(0xFFE2E3F3)},
-      {'icon': Icons.more_horiz, 'label': 'More', 'color': const Color(0xFFE8E8E8)},
+      {'id': 'all', 'icon': Icons.grid_view_rounded, 'label': 'All', 'color': const Color(0xFF1E3A5F)},
+      {'id': 'food', 'icon': Icons.restaurant_rounded, 'label': 'Food', 'color': const Color(0xFF4CAF50)},
+      {'id': 'retail', 'icon': Icons.shopping_bag_rounded, 'label': 'Retail', 'color': const Color(0xFFE91E63)},
+      {'id': 'construction', 'icon': Icons.construction_rounded, 'label': 'Build', 'color': const Color(0xFFFF9800)},
+      {'id': 'office', 'icon': Icons.business_rounded, 'label': 'Office', 'color': const Color(0xFF2196F3)},
+      {'id': 'hospitality', 'icon': Icons.hotel_rounded, 'label': 'Hotel', 'color': const Color(0xFF9C27B0)},
+      {'id': 'packaging', 'icon': Icons.inventory_2_rounded, 'label': 'Pack', 'color': const Color(0xFF795548)},
+      {'id': 'more', 'icon': Icons.more_horiz_rounded, 'label': 'More', 'color': const Color(0xFF607D8B)},
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: SizedBox(
-        height: 100,
+        height: 90,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           itemCount: categories.length,
           itemBuilder: (context, index) {
             final cat = categories[index];
-            return Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Column(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: cat['color'] as Color,
-                      borderRadius: BorderRadius.circular(20),
+            final isSelected = _selectedCategory == cat['id'];
+            return GestureDetector(
+              onTap: () => setState(() => _selectedCategory = cat['id'] as String),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Column(
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 56, height: 56,
+                      decoration: BoxDecoration(
+                        color: isSelected ? cat['color'] as Color : (cat['color'] as Color).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: isSelected ? [BoxShadow(color: (cat['color'] as Color).withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 4))] : null,
+                      ),
+                      child: Icon(cat['icon'] as IconData, color: isSelected ? Colors.white : cat['color'] as Color, size: 26),
                     ),
-                    child: Icon(
-                      cat['icon'] as IconData,
-                      color: const Color(0xFF1B4332),
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    cat['label'] as String,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1B4332),
-                    ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(cat['label'] as String,
+                      style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected ? const Color(0xFF1E3A5F) : Colors.grey[600])),
+                  ],
+                ),
               ),
             );
           },
@@ -281,43 +214,31 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Expiring Soon',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B4332),
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Hot Deals', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F))),
+                  Text('Expiring soon - act fast', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+                ],
               ),
-              TextButton(
-                onPressed: () {},
-                child: const Text(
-                  'See all',
-                  style: TextStyle(
-                    color: Color(0xFF2D6A4F),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              TextButton(onPressed: () {}, child: const Text('See all', style: TextStyle(color: Color(0xFF1E3A5F), fontWeight: FontWeight.w600))),
             ],
           ),
         ),
         SizedBox(
-          height: 220,
+          height: 200,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: featured.length,
-            itemBuilder: (context, index) {
-              return _buildFeaturedCard(featured[index]);
-            },
+            itemBuilder: (context, index) => _buildFeaturedCard(featured[index]),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -326,170 +247,60 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return GestureDetector(
       onTap: () => context.push(AppRoutes.listingDetailPath(listing.id)),
       child: Container(
-        width: 280,
-        margin: const EdgeInsets.only(right: 16),
+        width: 300, margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 16, offset: const Offset(0, 4))],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           child: Stack(
+            fit: StackFit.expand,
             children: [
-              // Background Image
-              Positioned.fill(
-                child: listing.primaryPhotoUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: listing.primaryPhotoUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(color: Colors.grey[200]),
-                        errorWidget: (_, __, ___) => Container(
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.image, size: 40),
-                        ),
-                      )
-                    : Container(color: Colors.grey[200]),
-              ),
-              // Gradient Overlay
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.7),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // Discount Badge
+              listing.primaryPhotoUrl != null
+                  ? CachedNetworkImage(imageUrl: listing.primaryPhotoUrl!, fit: BoxFit.cover,
+                      placeholder: (_, __) => Container(color: Colors.grey[200]),
+                      errorWidget: (_, __, ___) => Container(color: Colors.grey[200], child: const Icon(Icons.image, size: 40)))
+                  : Container(color: Colors.grey[200]),
+              Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.75)]))),
+              // Badges
+              Positioned(top: 12, left: 12, child: _buildCategoryBadge(listing)),
               if (listing.hasDiscount)
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B6B),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '-${listing.discountPercentage!.toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              // Time Badge
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                Positioned(top: 12, right: 12, child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: const Color(0xFFFF5252), borderRadius: BorderRadius.circular(8)),
+                  child: Text('-${listing.discountPercentage!.toStringAsFixed(0)}%',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                )),
+              // Content
+              Positioned(bottom: 14, left: 14, right: 14, child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(listing.displayName, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Text(listing.enterprise.name, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13)),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.schedule, size: 14, color: Color(0xFFFF6B6B)),
-                      const SizedBox(width: 4),
-                      Text(
-                        listing.timeLeftDisplay,
-                        style: const TextStyle(
-                          color: Color(0xFFFF6B6B),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
+                      Row(children: [
+                        Text('\$${listing.currentPrice.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text(' /${listing.unit}', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 13)),
+                      ]),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                        child: Row(children: [
+                          Icon(Icons.schedule, size: 14, color: Colors.orange[700]),
+                          const SizedBox(width: 4),
+                          Text(listing.timeLeftDisplay, style: TextStyle(color: Colors.orange[700], fontWeight: FontWeight.w600, fontSize: 12)),
+                        ]),
                       ),
                     ],
                   ),
-                ),
-              ),
-              // Content
-              Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      listing.displayName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      listing.enterprise.name,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              '\$${listing.currentPrice.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (listing.hasDiscount)
-                              Text(
-                                '\$${listing.basePrice.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.6),
-                                  fontSize: 14,
-                                  decoration: TextDecoration.lineThrough,
-                                ),
-                              ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2D6A4F),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text(
-                            'Reserve',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                ],
+              )),
             ],
           ),
         ),
@@ -497,54 +308,67 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildCategoryBadge(SurplusListing listing) {
+    final catName = _getCategoryFromListing(listing);
+    final catColor = _getCategoryColor(catName);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: catColor, borderRadius: BorderRadius.circular(8)),
+      child: Text(catName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 11)),
+    );
+  }
+
+  String _getCategoryFromListing(SurplusListing listing) {
+    final name = listing.displayName.toLowerCase();
+    if (name.contains('chair') || name.contains('desk') || name.contains('office')) return 'Office';
+    if (name.contains('tile') || name.contains('paint') || name.contains('wood')) return 'Construction';
+    if (name.contains('clothing') || name.contains('electronic') || name.contains('accessor')) return 'Retail';
+    if (name.contains('linen') || name.contains('tableware') || name.contains('hotel')) return 'Hospitality';
+    if (name.contains('pallet') || name.contains('box') || name.contains('packaging')) return 'Packaging';
+    return 'Food';
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Office': return const Color(0xFF2196F3);
+      case 'Construction': return const Color(0xFFFF9800);
+      case 'Retail': return const Color(0xFFE91E63);
+      case 'Hospitality': return const Color(0xFF9C27B0);
+      case 'Packaging': return const Color(0xFF795548);
+      default: return const Color(0xFF4CAF50);
+    }
+  }
+
+  Widget _buildSectionTitle(String title, String subtitle) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1B4332),
-            ),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: const Text(
-              'See all',
-              style: TextStyle(
-                color: Color(0xFF2D6A4F),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F))),
+            Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+          ]),
+          TextButton(onPressed: () {}, child: const Text('Filter', style: TextStyle(color: Color(0xFF1E3A5F), fontWeight: FontWeight.w600))),
         ],
       ),
     );
   }
 
   Widget _buildListingCard(SurplusListing listing) {
+    final catName = _getCategoryFromListing(listing);
+    final catColor = _getCategoryColor(catName);
+    
     return GestureDetector(
       onTap: () => context.push(AppRoutes.listingDetailPath(listing.id)),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: Colors.white, borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Section - Fixed aspect ratio
             AspectRatio(
               aspectRatio: 1.1,
               child: Stack(
@@ -553,161 +377,60 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   ClipRRect(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     child: listing.primaryPhotoUrl != null
-                        ? CachedNetworkImage(
-                            imageUrl: listing.primaryPhotoUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(
-                              color: const Color(0xFFF5F5F5),
-                              child: const Center(
-                                child: Icon(Icons.image_outlined, color: Color(0xFFBDBDBD), size: 32),
-                              ),
-                            ),
-                            errorWidget: (_, __, ___) => Container(
-                              color: const Color(0xFFF5F5F5),
-                              child: const Center(
-                                child: Icon(Icons.image_outlined, color: Color(0xFFBDBDBD), size: 32),
-                              ),
-                            ),
-                          )
-                        : Container(
-                            color: const Color(0xFFF5F5F5),
-                            child: const Center(
-                              child: Icon(Icons.image_outlined, color: Color(0xFFBDBDBD), size: 32),
-                            ),
-                          ),
+                        ? CachedNetworkImage(imageUrl: listing.primaryPhotoUrl!, fit: BoxFit.cover,
+                            placeholder: (_, __) => Container(color: const Color(0xFFF5F5F5)),
+                            errorWidget: (_, __, ___) => Container(color: const Color(0xFFF5F5F5), child: const Icon(Icons.image_outlined, color: Color(0xFFBDBDBD), size: 32)))
+                        : Container(color: const Color(0xFFF5F5F5), child: const Icon(Icons.image_outlined, color: Color(0xFFBDBDBD), size: 32)),
                   ),
+                  // Category Badge
+                  Positioned(top: 8, left: 8, child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: catColor, borderRadius: BorderRadius.circular(6)),
+                    child: Text(catName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 10)),
+                  )),
                   // Discount Badge
                   if (listing.hasDiscount)
-                    Positioned(
-                      top: 10,
-                      left: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF5252),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '-${listing.discountPercentage!.toStringAsFixed(0)}%',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    ),
-                  // Favorite Button
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.favorite_border_rounded,
-                        size: 16,
-                        color: Color(0xFF1B4332),
-                      ),
-                    ),
-                  ),
+                    Positioned(top: 8, right: 8, child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(color: const Color(0xFFFF5252), borderRadius: BorderRadius.circular(6)),
+                      child: Text('-${listing.discountPercentage!.toStringAsFixed(0)}%',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 10)),
+                    )),
+                  // Quantity Badge
+                  Positioned(bottom: 8, right: 8, child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), borderRadius: BorderRadius.circular(6)),
+                    child: Text('${listing.quantityAvailable.toStringAsFixed(0)} ${listing.unit}',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 10)),
+                  )),
                 ],
               ),
             ),
-            // Content Section - Compact and structured
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
-                  Text(
-                    listing.displayName,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1B4332),
-                      height: 1.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(listing.displayName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1E3A5F), height: 1.2), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
-                  // Vendor
-                  Text(
-                    listing.enterprise.name,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF757575),
-                      height: 1.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(listing.enterprise.name, style: const TextStyle(fontSize: 12, color: Color(0xFF757575), height: 1.2), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
-                  // Price Row
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Current Price
-                      Text(
-                        '\$${listing.currentPrice.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2D6A4F),
-                        ),
-                      ),
-                      // Original Price (if discounted)
+                      Text('\$${listing.currentPrice.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Color(0xFF1E3A5F))),
                       if (listing.hasDiscount) ...[
                         const SizedBox(width: 6),
-                        Text(
-                          '\$${listing.basePrice.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF9E9E9E),
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
+                        Text('\$${listing.basePrice.toStringAsFixed(2)}', style: const TextStyle(fontSize: 11, color: Color(0xFF9E9E9E), decoration: TextDecoration.lineThrough)),
                       ],
                       const Spacer(),
-                      // Time Badge
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF3E0),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.schedule_rounded,
-                              size: 12,
-                              color: Color(0xFFE65100),
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              listing.timeLeftDisplay,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFE65100),
-                              ),
-                            ),
-                          ],
-                        ),
+                        decoration: BoxDecoration(color: const Color(0xFFFFF3E0), borderRadius: BorderRadius.circular(4)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.schedule_rounded, size: 11, color: Color(0xFFE65100)),
+                          const SizedBox(width: 3),
+                          Text(listing.timeLeftDisplay, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: Color(0xFFE65100))),
+                        ]),
                       ),
                     ],
                   ),
@@ -729,16 +452,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: 0.68,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (_, __) => _buildCardSkeleton(),
-              childCount: 6,
-            ),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 14, crossAxisSpacing: 14, childAspectRatio: 0.68),
+            delegate: SliverChildBuilderDelegate((_, __) => _buildCardSkeleton(), childCount: 6),
           ),
         ),
       ],
@@ -747,77 +462,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Widget _buildCardSkeleton() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image skeleton
-          AspectRatio(
-            aspectRatio: 1.1,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-            ),
-          ),
-          // Content skeleton
+          AspectRatio(aspectRatio: 1.1, child: Container(
+            decoration: BoxDecoration(color: Colors.grey[200], borderRadius: const BorderRadius.vertical(top: Radius.circular(16))),
+          )),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 14,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  height: 12,
-                  width: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Container(
-                      height: 16,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      height: 18,
-                      width: 55,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(height: 14, width: double.infinity, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4))),
+              const SizedBox(height: 6),
+              Container(height: 12, width: 80, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4))),
+              const SizedBox(height: 10),
+              Row(children: [
+                Container(height: 16, width: 50, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4))),
+                const Spacer(),
+                Container(height: 18, width: 55, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4))),
+              ]),
+            ]),
           ),
         ],
       ),
@@ -828,26 +493,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
-        child: Column(
-          children: [
-            Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            const Text(
-              'No listings found',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B4332),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try adjusting your filters or search in a different area.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          ],
-        ),
+        child: Column(children: [
+          Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[300]),
+          const SizedBox(height: 16),
+          const Text('No surplus available', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F))),
+          const SizedBox(height: 8),
+          Text('Check back later or adjust your filters.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
+        ]),
       ),
     );
   }
@@ -856,38 +508,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
-            const SizedBox(height: 16),
-            const Text(
-              'Something went wrong',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              error,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => ref.invalidate(listingsProvider),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2D6A4F),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Try Again'),
-            ),
-          ],
-        ),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
+          const SizedBox(height: 16),
+          const Text('Something went wrong', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(error, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[600])),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () => ref.invalidate(listingsProvider),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A5F), padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            child: const Text('Try Again'),
+          ),
+        ]),
       ),
     );
   }
