@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dw_ui/dw_ui.dart';
+import 'package:dw_domain/dw_domain.dart';
 
 import '../../providers/providers.dart';
 import '../../routing/app_routes.dart';

@@ -35,9 +35,12 @@ class SurplusListing {
   final DateTime? pickupStart;
   final DateTime? pickupEnd;
   final double? distance;
-  final double? price;
-  final double? quantity;
   final List<String> imageUrls;
+
+  // Convenience getters for non-nullable access
+  double get price => currentPrice;
+  double get quantity => quantityAvailable;
+  String get safeTitle => title ?? displayName;
 
   const SurplusListing({
     required this.id,
@@ -75,8 +78,6 @@ class SurplusListing {
     this.pickupStart,
     this.pickupEnd,
     this.distance,
-    this.price,
-    this.quantity,
     this.imageUrls = const [],
   });
 
@@ -204,8 +205,6 @@ class SurplusListing {
       pickupStart: pickupStart,
       pickupEnd: pickupEnd,
       distance: distance,
-      price: price,
-      quantity: quantity,
       imageUrls: imageUrls,
     );
   }

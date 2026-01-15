@@ -11,7 +11,7 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 /// App router provider
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  final authState = ref.watch(authStateHelperProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,

@@ -31,7 +31,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
     state = const AsyncValue.loading();
     try {
       final response = await _apiClient.login(email, password);
@@ -58,6 +61,45 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     await _apiClient.logout();
     state = const AsyncValue.data(null);
   }
+
+  Future<void> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final response = await _apiClient.register(name, email, password);
+      state = AsyncValue.data(UserMapper.fromDto(response.user));
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> requestPasswordReset({required String email}) async {
+    await _apiClient.requestPasswordReset(email);
+  }
+
+  Future<void> updateProfile({
+    String? name,
+    String? phone,
+  }) async {
+    final currentUser = state.valueOrNull;
+    if (currentUser == null) return;
+
+    try {
+      // TODO: Implement API call when endpoint is available
+      // For now, update local state
+      state = AsyncValue.data(currentUser.copyWith(
+        name: name ?? currentUser.name,
+        phone: phone ?? currentUser.phone,
+      ));
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
 }
 
 /// Current user provider
@@ -68,4 +110,31 @@ final currentUserProvider = Provider<User?>((ref) {
 /// Is authenticated provider
 final isAuthenticatedProvider = Provider<bool>((ref) {
   return ref.watch(currentUserProvider) != null;
+});
+
+/// Auth state helper for routing
+class AuthState {
+  final bool isLoading;
+  final bool isAuthenticated;
+  final User? user;
+
+  const AuthState({
+    this.isLoading = false,
+    this.isAuthenticated = false,
+    this.user,
+  });
+}
+
+/// Auth state provider for routing
+final authStateHelperProvider = Provider<AuthState>((ref) {
+  final authState = ref.watch(authStateProvider);
+  return authState.when(
+    data: (user) => AuthState(
+      isLoading: false,
+      isAuthenticated: user != null,
+      user: user,
+    ),
+    loading: () => const AuthState(isLoading: true),
+    error: (_, __) => const AuthState(isLoading: false, isAuthenticated: false),
+  );
 });

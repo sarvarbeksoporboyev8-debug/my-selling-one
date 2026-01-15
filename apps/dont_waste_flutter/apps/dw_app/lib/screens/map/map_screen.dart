@@ -346,7 +346,7 @@ class _ListingPopup extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              listing.title,
+              listing.safeTitle,
               style: DwTextStyles.titleSmall,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -428,7 +428,7 @@ class _SelectedListingCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      listing.title,
+                      listing.safeTitle,
                       style: DwTextStyles.titleSmall,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

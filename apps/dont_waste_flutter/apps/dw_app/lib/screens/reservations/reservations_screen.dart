@@ -107,7 +107,7 @@ class _ReservationCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      reservation.listing.title,
+                      reservation.listing.safeTitle,
                       style: DwTextStyles.titleMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
