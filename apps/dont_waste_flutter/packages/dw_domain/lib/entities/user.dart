@@ -1,45 +1,35 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+class User {
+  final int id;
+  final String email;
+  final String name;
+  final String? phone;
+  final String? avatarUrl;
+  final DateTime? createdAt;
 
-part 'user.freezed.dart';
+  const User({
+    required this.id,
+    required this.email,
+    required this.name,
+    this.phone,
+    this.avatarUrl,
+    this.createdAt,
+  });
 
-@freezed
-class User with _$User {
-  const User._();
-
-  const factory User({
-    required int id,
-    required String email,
-    String? firstName,
-    String? lastName,
-    String? apiKey,
+  User copyWith({
+    int? id,
+    String? email,
+    String? name,
+    String? phone,
+    String? avatarUrl,
     DateTime? createdAt,
-  }) = _User;
-
-  /// Get full name
-  String get fullName {
-    final parts = <String>[];
-    if (firstName != null) parts.add(firstName!);
-    if (lastName != null) parts.add(lastName!);
-    return parts.isEmpty ? email : parts.join(' ');
+  }) {
+    return User(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
-
-  /// Get initials for avatar
-  String get initials {
-    if (firstName != null && lastName != null) {
-      return '${firstName![0]}${lastName![0]}'.toUpperCase();
-    }
-    if (firstName != null) {
-      return firstName![0].toUpperCase();
-    }
-    return email[0].toUpperCase();
-  }
-}
-
-@freezed
-class AuthState with _$AuthState {
-  const factory AuthState.initial() = _Initial;
-  const factory AuthState.loading() = _Loading;
-  const factory AuthState.authenticated(User user) = _Authenticated;
-  const factory AuthState.unauthenticated() = _Unauthenticated;
-  const factory AuthState.error(String message) = _Error;
 }

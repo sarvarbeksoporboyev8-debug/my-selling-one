@@ -1,44 +1,46 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'surplus_listing.dart';
 
-part 'reservation.freezed.dart';
+class Reservation {
+  final int id;
+  final SurplusListing listing;
+  final double quantity;
+  final double totalPrice;
+  final ReservationStatus status;
+  final String? message;
+  final DateTime? preferredPickupTime;
+  final DateTime? confirmedPickupTime;
+  final DateTime createdAt;
+  final DateTime? expiresAt;
 
-@freezed
-class Reservation with _$Reservation {
-  const Reservation._();
+  const Reservation({
+    required this.id,
+    required this.listing,
+    required this.quantity,
+    required this.totalPrice,
+    required this.status,
+    this.message,
+    this.preferredPickupTime,
+    this.confirmedPickupTime,
+    required this.createdAt,
+    this.expiresAt,
+  });
 
-  const factory Reservation({
-    required int id,
-    required double quantity,
-    required double priceAtReservation,
-    double? totalPrice,
-    required DateTime reservedUntil,
-    required String status,
-    String? notes,
-    int? timeRemainingSeconds,
-    bool? expired,
-    ListingCompact? listing,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) = _Reservation;
+  bool get isActive =>
+      status == ReservationStatus.pending ||
+      status == ReservationStatus.confirmed;
 
-  /// Check if reservation is active
-  bool get isActive => status == 'active';
+  bool get isExpired => status == ReservationStatus.expired;
 
-  /// Check if reservation is expired
-  bool get isExpired => status == 'expired' || reservedUntil.isBefore(DateTime.now());
+  bool get isCancelled => status == ReservationStatus.cancelled;
 
-  /// Check if reservation is cancelled
-  bool get isCancelled => status == 'cancelled';
+  bool get isCompleted => status == ReservationStatus.completed;
 
-  /// Check if reservation is converted to order
-  bool get isConverted => status == 'converted';
-
-  /// Get time remaining as human readable string
   String get timeRemainingDisplay {
+    if (expiresAt == null) return '';
     if (isExpired) return 'Expired';
 
     final now = DateTime.now();
-    final diff = reservedUntil.difference(now);
+    final diff = expiresAt!.difference(now);
 
     if (diff.isNegative) return 'Expired';
 
@@ -51,41 +53,49 @@ class Reservation with _$Reservation {
     }
   }
 
-  /// Get calculated total price
-  double get calculatedTotal => totalPrice ?? (quantity * priceAtReservation);
-
-  /// Get status display text
-  String get statusDisplay {
-    switch (status) {
-      case 'active':
-        return 'Active';
-      case 'expired':
-        return 'Expired';
-      case 'cancelled':
-        return 'Cancelled';
-      case 'converted':
-        return 'Completed';
-      default:
-        return status;
-    }
+  Reservation copyWith({
+    int? id,
+    SurplusListing? listing,
+    double? quantity,
+    double? totalPrice,
+    ReservationStatus? status,
+    String? message,
+    DateTime? preferredPickupTime,
+    DateTime? confirmedPickupTime,
+    DateTime? createdAt,
+    DateTime? expiresAt,
+  }) {
+    return Reservation(
+      id: id ?? this.id,
+      listing: listing ?? this.listing,
+      quantity: quantity ?? this.quantity,
+      totalPrice: totalPrice ?? this.totalPrice,
+      status: status ?? this.status,
+      message: message ?? this.message,
+      preferredPickupTime: preferredPickupTime ?? this.preferredPickupTime,
+      confirmedPickupTime: confirmedPickupTime ?? this.confirmedPickupTime,
+      createdAt: createdAt ?? this.createdAt,
+      expiresAt: expiresAt ?? this.expiresAt,
+    );
   }
 }
 
-@freezed
-class ListingCompact with _$ListingCompact {
-  const ListingCompact._();
+enum ReservationStatus {
+  pending('pending', 'Pending'),
+  confirmed('confirmed', 'Confirmed'),
+  completed('completed', 'Completed'),
+  cancelled('cancelled', 'Cancelled'),
+  expired('expired', 'Expired');
 
-  const factory ListingCompact({
-    required int id,
-    String? title,
-    required String unit,
-    required double basePrice,
-    required double currentPrice,
-    required DateTime expiresAt,
-    required String status,
-    String? enterpriseName,
-    String? variantName,
-  }) = _ListingCompact;
+  final String value;
+  final String displayName;
 
-  String get displayName => title ?? variantName ?? 'Unknown';
+  const ReservationStatus(this.value, this.displayName);
+
+  static ReservationStatus fromString(String value) {
+    return ReservationStatus.values.firstWhere(
+      (s) => s.value == value,
+      orElse: () => ReservationStatus.pending,
+    );
+  }
 }

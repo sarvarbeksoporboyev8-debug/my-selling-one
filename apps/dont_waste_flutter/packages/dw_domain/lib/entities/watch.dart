@@ -1,79 +1,49 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'surplus_listing.dart';
 
-part 'watch.freezed.dart';
+class WatchlistItem {
+  final int id;
+  final SurplusListing listing;
+  final DateTime addedAt;
+  final bool notifyOnPriceChange;
+  final bool notifyOnLowStock;
 
-@freezed
-class Watch with _$Watch {
-  const Watch._();
-
-  const factory Watch({
-    required int id,
-    double? latitude,
-    double? longitude,
-    double? radiusKm,
-    String? queryText,
-    List<int>? taxonIds,
-    double? maxPrice,
-    double? minQuantity,
-    int? expiresWithinHours,
-    required bool active,
-    bool? emailNotifications,
-    DateTime? lastNotifiedAt,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) = _Watch;
-
-  /// Get a human-readable description of the watch
-  String get description {
-    final parts = <String>[];
-
-    if (queryText != null && queryText!.isNotEmpty) {
-      parts.add('"$queryText"');
-    }
-
-    if (radiusKm != null) {
-      parts.add('within ${radiusKm!.toInt()}km');
-    }
-
-    if (expiresWithinHours != null) {
-      if (expiresWithinHours! <= 24) {
-        parts.add('expiring in ${expiresWithinHours}h');
-      } else {
-        parts.add('expiring in ${(expiresWithinHours! / 24).round()}d');
-      }
-    }
-
-    if (maxPrice != null) {
-      parts.add('under \$${maxPrice!.toStringAsFixed(0)}');
-    }
-
-    if (minQuantity != null) {
-      parts.add('min ${minQuantity!.toStringAsFixed(0)} qty');
-    }
-
-    if (parts.isEmpty) {
-      return 'All nearby listings';
-    }
-
-    return parts.join(' • ');
-  }
-
-  /// Check if watch has location filter
-  bool get hasLocationFilter => latitude != null && longitude != null;
+  const WatchlistItem({
+    required this.id,
+    required this.listing,
+    required this.addedAt,
+    this.notifyOnPriceChange = true,
+    this.notifyOnLowStock = true,
+  });
 }
 
-@freezed
-class CreateWatch with _$CreateWatch {
-  const factory CreateWatch({
-    double? latitude,
-    double? longitude,
-    double? radiusKm,
-    String? queryText,
-    List<int>? taxonIds,
-    double? maxPrice,
-    double? minQuantity,
-    int? expiresWithinHours,
-    @Default(true) bool active,
-    @Default(true) bool emailNotifications,
-  }) = _CreateWatch;
+class SavedSearch {
+  final int id;
+  final double? latitude;
+  final double? longitude;
+  final double? radiusKm;
+  final String? queryText;
+  final List<int>? taxonIds;
+  final double? maxPrice;
+  final double? minQuantity;
+  final int? expiresWithinHours;
+  final bool active;
+  final bool emailNotifications;
+  final DateTime? lastNotifiedAt;
+  final DateTime createdAt;
+
+  const SavedSearch({
+    required this.id,
+    this.latitude,
+    this.longitude,
+    this.radiusKm,
+    this.queryText,
+    this.taxonIds,
+    this.maxPrice,
+    this.minQuantity,
+    this.expiresWithinHours,
+    this.active = true,
+    this.emailNotifications = true,
+    this.lastNotifiedAt,
+    required this.createdAt,
+  });
 }

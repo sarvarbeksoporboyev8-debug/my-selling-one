@@ -1,64 +1,52 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'reservation.dart';
+class Offer {
+  final int id;
+  final int listingId;
+  final double offeredQuantity;
+  final double offeredPricePerUnit;
+  final double offeredTotal;
+  final String? message;
+  final String? sellerResponse;
+  final OfferStatus status;
+  final DateTime? expiresAt;
+  final DateTime? respondedAt;
+  final DateTime createdAt;
 
-part 'offer.freezed.dart';
+  const Offer({
+    required this.id,
+    required this.listingId,
+    required this.offeredQuantity,
+    required this.offeredPricePerUnit,
+    required this.offeredTotal,
+    this.message,
+    this.sellerResponse,
+    required this.status,
+    this.expiresAt,
+    this.respondedAt,
+    required this.createdAt,
+  });
 
-@freezed
-class Offer with _$Offer {
-  const Offer._();
+  bool get isPending => status == OfferStatus.pending;
+  bool get isAccepted => status == OfferStatus.accepted;
+  bool get isRejected => status == OfferStatus.rejected;
+  bool get isExpired => status == OfferStatus.expired;
+}
 
-  const factory Offer({
-    required int id,
-    required double offeredQuantity,
-    required double offeredPricePerUnit,
-    required double offeredTotal,
-    String? message,
-    String? sellerResponse,
-    required String status,
-    double? discountPercentage,
-    DateTime? expiresAt,
-    DateTime? respondedAt,
-    ListingCompact? listing,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) = _Offer;
+enum OfferStatus {
+  pending('pending', 'Pending'),
+  accepted('accepted', 'Accepted'),
+  rejected('rejected', 'Rejected'),
+  expired('expired', 'Expired'),
+  countered('countered', 'Countered');
 
-  /// Check if offer is pending
-  bool get isPending => status == 'pending';
+  final String value;
+  final String displayName;
 
-  /// Check if offer is accepted
-  bool get isAccepted => status == 'accepted';
+  const OfferStatus(this.value, this.displayName);
 
-  /// Check if offer is rejected
-  bool get isRejected => status == 'rejected';
-
-  /// Check if offer is cancelled
-  bool get isCancelled => status == 'cancelled';
-
-  /// Check if offer is expired
-  bool get isExpired => status == 'expired';
-
-  /// Get status display text
-  String get statusDisplay {
-    switch (status) {
-      case 'pending':
-        return 'Pending';
-      case 'accepted':
-        return 'Accepted';
-      case 'rejected':
-        return 'Rejected';
-      case 'cancelled':
-        return 'Cancelled';
-      case 'expired':
-        return 'Expired';
-      default:
-        return status;
-    }
-  }
-
-  /// Get discount display
-  String? get discountDisplay {
-    if (discountPercentage == null || discountPercentage! <= 0) return null;
-    return '${discountPercentage!.toStringAsFixed(1)}% off';
+  static OfferStatus fromString(String value) {
+    return OfferStatus.values.firstWhere(
+      (s) => s.value == value,
+      orElse: () => OfferStatus.pending,
+    );
   }
 }

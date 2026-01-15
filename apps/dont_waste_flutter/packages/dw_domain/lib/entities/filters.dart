@@ -1,15 +1,38 @@
-import 'package:freezed_annotation/freezed_annotation.dart';
+class ListingFilters {
+  final double? latitude;
+  final double? longitude;
+  final double? radiusKm;
+  final String? query;
+  final List<int>? taxonIds;
+  final double? minPrice;
+  final double? maxPrice;
+  final double? minQuantity;
+  final double? maxQuantity;
+  final int? expiresWithinHours;
+  final DateTime? pickupStartAfter;
+  final DateTime? pickupEndBefore;
+  final SortOption sortBy;
 
-part 'filters.freezed.dart';
+  const ListingFilters({
+    this.latitude,
+    this.longitude,
+    this.radiusKm = 50.0,
+    this.query,
+    this.taxonIds,
+    this.minPrice,
+    this.maxPrice,
+    this.minQuantity,
+    this.maxQuantity,
+    this.expiresWithinHours,
+    this.pickupStartAfter,
+    this.pickupEndBefore,
+    this.sortBy = SortOption.distance,
+  });
 
-@freezed
-class ListingFilters with _$ListingFilters {
-  const ListingFilters._();
-
-  const factory ListingFilters({
+  ListingFilters copyWith({
     double? latitude,
     double? longitude,
-    @Default(50.0) double radiusKm,
+    double? radiusKm,
     String? query,
     List<int>? taxonIds,
     double? minPrice,
@@ -19,13 +42,28 @@ class ListingFilters with _$ListingFilters {
     int? expiresWithinHours,
     DateTime? pickupStartAfter,
     DateTime? pickupEndBefore,
-    @Default(SortOption.expiresAt) SortOption sortBy,
-  }) = _ListingFilters;
+    SortOption? sortBy,
+  }) {
+    return ListingFilters(
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      radiusKm: radiusKm ?? this.radiusKm,
+      query: query ?? this.query,
+      taxonIds: taxonIds ?? this.taxonIds,
+      minPrice: minPrice ?? this.minPrice,
+      maxPrice: maxPrice ?? this.maxPrice,
+      minQuantity: minQuantity ?? this.minQuantity,
+      maxQuantity: maxQuantity ?? this.maxQuantity,
+      expiresWithinHours: expiresWithinHours ?? this.expiresWithinHours,
+      pickupStartAfter: pickupStartAfter ?? this.pickupStartAfter,
+      pickupEndBefore: pickupEndBefore ?? this.pickupEndBefore,
+      sortBy: sortBy ?? this.sortBy,
+    );
+  }
 
-  /// Check if any filters are active (besides location)
   bool get hasActiveFilters {
-    return query != null && query!.isNotEmpty ||
-        taxonIds != null && taxonIds!.isNotEmpty ||
+    return (query != null && query!.isNotEmpty) ||
+        (taxonIds != null && taxonIds!.isNotEmpty) ||
         minPrice != null ||
         maxPrice != null ||
         minQuantity != null ||
@@ -35,7 +73,6 @@ class ListingFilters with _$ListingFilters {
         pickupEndBefore != null;
   }
 
-  /// Get count of active filters
   int get activeFilterCount {
     int count = 0;
     if (query != null && query!.isNotEmpty) count++;
@@ -47,12 +84,10 @@ class ListingFilters with _$ListingFilters {
     return count;
   }
 
-  /// Create a copy with location updated
   ListingFilters withLocation(double lat, double lng) {
     return copyWith(latitude: lat, longitude: lng);
   }
 
-  /// Create a copy with filters cleared (keep location)
   ListingFilters clearFilters() {
     return ListingFilters(
       latitude: latitude,
@@ -65,8 +100,9 @@ class ListingFilters with _$ListingFilters {
 enum SortOption {
   distance('distance', 'Distance'),
   expiresAt('expires_at', 'Expiring Soon'),
-  price('price', 'Price'),
-  bestValue('best_value', 'Best Value');
+  priceAsc('price_asc', 'Price: Low to High'),
+  priceDesc('price_desc', 'Price: High to Low'),
+  newest('newest', 'Newest First');
 
   final String apiValue;
   final String displayName;
@@ -74,7 +110,6 @@ enum SortOption {
   const SortOption(this.apiValue, this.displayName);
 }
 
-/// Preset expiry filter options
 enum ExpiryFilter {
   twoHours(2, '2 hours'),
   eightHours(8, '8 hours'),
