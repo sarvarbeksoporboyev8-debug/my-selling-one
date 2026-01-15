@@ -89,9 +89,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   sliver: SliverGrid(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 0.72,
+                      mainAxisSpacing: 14,
+                      crossAxisSpacing: 14,
+                      childAspectRatio: 0.68,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
@@ -532,73 +532,92 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            Expanded(
-              flex: 3,
+            // Image Section - Fixed aspect ratio
+            AspectRatio(
+              aspectRatio: 1.1,
               child: Stack(
+                fit: StackFit.expand,
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     child: listing.primaryPhotoUrl != null
                         ? CachedNetworkImage(
                             imageUrl: listing.primaryPhotoUrl!,
-                            width: double.infinity,
                             fit: BoxFit.cover,
-                            placeholder: (_, __) => Container(color: Colors.grey[100]),
+                            placeholder: (_, __) => Container(
+                              color: const Color(0xFFF5F5F5),
+                              child: const Center(
+                                child: Icon(Icons.image_outlined, color: Color(0xFFBDBDBD), size: 32),
+                              ),
+                            ),
                             errorWidget: (_, __, ___) => Container(
-                              color: Colors.grey[100],
-                              child: const Icon(Icons.image, color: Colors.grey),
+                              color: const Color(0xFFF5F5F5),
+                              child: const Center(
+                                child: Icon(Icons.image_outlined, color: Color(0xFFBDBDBD), size: 32),
+                              ),
                             ),
                           )
                         : Container(
-                            color: Colors.grey[100],
-                            child: const Icon(Icons.image, color: Colors.grey),
+                            color: const Color(0xFFF5F5F5),
+                            child: const Center(
+                              child: Icon(Icons.image_outlined, color: Color(0xFFBDBDBD), size: 32),
+                            ),
                           ),
                   ),
+                  // Discount Badge
                   if (listing.hasDiscount)
                     Positioned(
-                      top: 8,
-                      left: 8,
+                      top: 10,
+                      left: 10,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF6B6B),
-                          borderRadius: BorderRadius.circular(8),
+                          color: const Color(0xFFFF5252),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '-${listing.discountPercentage!.toStringAsFixed(0)}%',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w700,
                             fontSize: 11,
                           ),
                         ),
                       ),
                     ),
+                  // Favorite Button
                   Positioned(
-                    top: 8,
-                    right: 8,
+                    top: 10,
+                    right: 10,
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white.withOpacity(0.95),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: const Icon(
-                        Icons.favorite_border,
-                        size: 18,
+                        Icons.favorite_border_rounded,
+                        size: 16,
                         color: Color(0xFF1B4332),
                       ),
                     ),
@@ -606,63 +625,93 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 ],
               ),
             ),
-            // Content
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      listing.displayName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1B4332),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            // Content Section - Compact and structured
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    listing.displayName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1B4332),
+                      height: 1.2,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      listing.enterprise.name,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  // Vendor
+                  Text(
+                    listing.enterprise.name,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF757575),
+                      height: 1.2,
                     ),
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  // Price Row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Current Price
+                      Text(
+                        '\$${listing.currentPrice.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF2D6A4F),
+                        ),
+                      ),
+                      // Original Price (if discounted)
+                      if (listing.hasDiscount) ...[
+                        const SizedBox(width: 6),
                         Text(
-                          '\$${listing.currentPrice.toStringAsFixed(2)}',
+                          '\$${listing.basePrice.toStringAsFixed(2)}',
                           style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2D6A4F),
+                            fontSize: 12,
+                            color: Color(0xFF9E9E9E),
+                            decoration: TextDecoration.lineThrough,
                           ),
                         ),
-                        Row(
+                      ],
+                      const Spacer(),
+                      // Time Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.schedule, size: 14, color: Colors.grey),
-                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.schedule_rounded,
+                              size: 12,
+                              color: Color(0xFFE65100),
+                            ),
+                            const SizedBox(width: 3),
                             Text(
                               listing.timeLeftDisplay,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[600],
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFE65100),
                               ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -678,13 +727,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         SliverToBoxAdapter(child: _buildSearchBar()),
         SliverToBoxAdapter(child: _buildCategories()),
         SliverPadding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 0.72,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 14,
+              childAspectRatio: 0.68,
             ),
             delegate: SliverChildBuilderDelegate(
               (_, __) => _buildCardSkeleton(),
@@ -700,33 +749,74 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            flex: 3,
+          // Image skeleton
+          AspectRatio(
+            aspectRatio: 1.1,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.grey[200],
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(height: 14, width: double.infinity, color: Colors.grey[200]),
-                  const SizedBox(height: 8),
-                  Container(height: 12, width: 80, color: Colors.grey[200]),
-                  const Spacer(),
-                  Container(height: 16, width: 60, color: Colors.grey[200]),
-                ],
-              ),
+          // Content skeleton
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 14,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  height: 12,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Container(
+                      height: 16,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      height: 18,
+                      width: 55,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
