@@ -1,0 +1,157 @@
+- content_for :page_title do
+  = @surplus_listing.title.presence || @surplus_listing.variant&.name_to_display
+
+- content_for :page_actions do
+  - if @surplus_listing.status == 'draft'
+    = link_to t('admin.surplus_listings.publish'), publish_admin_surplus_listing_path(@surplus_listing),
+      method: :post, class: 'button primary', data: { confirm: t('admin.surplus_listings.confirm_publish') }
+  - elsif @surplus_listing.status.in?(%w[active reserved])
+    = link_to t('admin.surplus_listings.cancel'), cancel_admin_surplus_listing_path(@surplus_listing),
+      method: :post, class: 'button danger', data: { confirm: t('admin.surplus_listings.confirm_cancel') }
+
+  = link_to t('edit'), edit_admin_surplus_listing_path(@surplus_listing), class: 'button'
+
+.surplus-listing-details
+  .row
+    .alpha.eight.columns
+      %h3= t('admin.surplus_listings.details')
+
+      %table.index
+        %tbody
+          %tr
+            %th= t('admin.surplus_listings.enterprise')
+            %td= @surplus_listing.enterprise.name
+          %tr
+            %th= t('admin.surplus_listings.product')
+            %td= @surplus_listing.variant&.product&.name
+          %tr
+            %th= t('admin.surplus_listings.variant')
+            %td= @surplus_listing.variant&.name_to_display
+          %tr
+            %th= t('admin.surplus_listings.status')
+            %td
+              %span{ class: "badge badge-#{status_badge_class(@surplus_listing.status)}" }
+                = @surplus_listing.status.humanize
+          %tr
+            %th= t('admin.surplus_listings.visibility')
+            %td= @surplus_listing.visibility.humanize
+
+      - if @surplus_listing.description.present?
+        %h4= t('admin.surplus_listings.description')
+        %p= @surplus_listing.description
+
+      - if @surplus_listing.quality_notes.present?
+        %h4= t('admin.surplus_listings.quality_notes')
+        %p= @surplus_listing.quality_notes
+
+    .omega.four.columns
+      .info-box
+        %h4= t('admin.surplus_listings.quantity')
+        .big-number
+          = number_with_precision(@surplus_listing.quantity_available, precision: 2)
+          = @surplus_listing.unit
+        - if @surplus_listing.quantity_available < @surplus_listing.quantity_original
+          %small.text-muted
+            of #{number_with_precision(@surplus_listing.quantity_original, precision: 2)} original
+
+      .info-box
+        %h4= t('admin.surplus_listings.current_price')
+        .big-number= number_to_currency(@surplus_listing.current_price)
+        - if @surplus_listing.pricing_strategy != 'fixed'
+          %small.text-muted
+            Base: #{number_to_currency(@surplus_listing.base_price)}
+            %br
+            Strategy: #{@surplus_listing.pricing_strategy.humanize}
+
+      .info-box
+        %h4= t('admin.surplus_listings.time_remaining')
+        - hours_left = @surplus_listing.time_left_hours
+        .big-number{ class: hours_left < 24 ? 'text-warning' : '' }
+          - if hours_left <= 0
+            %span.text-danger Expired
+          - elsif hours_left < 24
+            = "#{hours_left.round(1)} hours"
+          - else
+            = "#{(hours_left / 24).round(1)} days"
+        %small.text-muted
+          Expires: #{@surplus_listing.expires_at.strftime('%b %d, %Y %H:%M')}
+
+  %hr
+
+  .row
+    .alpha.six.columns
+      %h3= t('admin.surplus_listings.pickup_window')
+      %p
+        %strong= t('admin.surplus_listings.from')
+        = @surplus_listing.pickup_start_at.strftime('%b %d, %Y %H:%M')
+      %p
+        %strong= t('admin.surplus_listings.to')
+        = @surplus_listing.pickup_end_at.strftime('%b %d, %Y %H:%M')
+
+    .omega.six.columns
+      %h3= t('admin.surplus_listings.pickup_location')
+      - location = @surplus_listing.pickup_location
+      - if location
+        %p
+          = location.address1
+          - if location.address2.present?
+            %br
+            = location.address2
+          %br
+          = "#{location.city}, #{location.state_name} #{location.zipcode}"
+
+  - if @surplus_listing.photos.attached?
+    %hr
+    %h3= t('admin.surplus_listings.photos')
+    .photos-grid
+      - @surplus_listing.photos.each do |photo|
+        .photo
+          = image_tag photo.variant(resize_to_limit: [200, 200])
+
+  %hr
+
+  .row
+    .alpha.six.columns
+      %h3= t('admin.surplus_listings.reservations')
+      - if @reservations.any?
+        %table.index
+          %thead
+            %tr
+              %th= t('admin.surplus_listings.buyer')
+              %th= t('admin.surplus_listings.quantity')
+              %th= t('admin.surplus_listings.status')
+              %th= t('admin.surplus_listings.reserved_until')
+          %tbody
+            - @reservations.each do |reservation|
+              %tr
+                %td= reservation.buyer.email
+                %td= "#{number_with_precision(reservation.quantity, precision: 2)} #{@surplus_listing.unit}"
+                %td
+                  %span{ class: "badge badge-#{reservation_badge_class(reservation.status)}" }
+                    = reservation.status.humanize
+                %td= reservation.reserved_until.strftime('%b %d %H:%M')
+      - else
+        %p.text-muted= t('admin.surplus_listings.no_reservations')
+
+    .omega.six.columns
+      %h3= t('admin.surplus_listings.offers')
+      - if @offers.any?
+        %table.index
+          %thead
+            %tr
+              %th= t('admin.surplus_listings.buyer')
+              %th= t('admin.surplus_listings.offer')
+              %th= t('admin.surplus_listings.status')
+          %tbody
+            - @offers.each do |offer|
+              %tr
+                %td= offer.buyer.email
+                %td
+                  = "#{number_with_precision(offer.offered_quantity, precision: 2)} #{@surplus_listing.unit}"
+                  %br
+                  %small= "@ #{number_to_currency(offer.offered_price_per_unit)}/#{@surplus_listing.unit}"
+                %td
+                  %span{ class: "badge badge-#{offer_badge_class(offer.status)}" }
+                    = offer.status.humanize
+      - else
+        %p.text-muted= t('admin.surplus_listings.no_offers')

@@ -1,0 +1,60 @@
+- content_for :page_title do
+  = t('admin.surplus_listings.title')
+
+- content_for :page_actions do
+  = link_to t('admin.surplus_listings.new'), new_admin_surplus_listing_path, class: 'button primary'
+
+%table.index.sortable
+  %thead
+    %tr
+      %th= t('admin.surplus_listings.enterprise')
+      %th= t('admin.surplus_listings.product')
+      %th= t('admin.surplus_listings.quantity')
+      %th= t('admin.surplus_listings.price')
+      %th= t('admin.surplus_listings.expires')
+      %th= t('admin.surplus_listings.status')
+      %th.actions= t('actions')
+
+  %tbody
+    - @surplus_listings.each do |listing|
+      %tr{ id: "listing_#{listing.id}", class: listing.status }
+        %td= listing.enterprise.name
+        %td
+          = listing.variant&.product&.name
+          - if listing.title.present?
+            %br
+            %small= listing.title
+        %td
+          = number_with_precision(listing.quantity_available, precision: 2)
+          = listing.unit
+          - if listing.quantity_available < listing.quantity_original
+            %br
+            %small.text-muted
+              of #{number_with_precision(listing.quantity_original, precision: 2)}
+        %td
+          = number_to_currency(listing.current_price)
+          - if listing.pricing_strategy != 'fixed'
+            %br
+            %small.text-muted= listing.pricing_strategy.humanize
+        %td
+          = listing.expires_at.strftime('%b %d, %Y %H:%M')
+          %br
+          %small
+            - hours_left = listing.time_left_hours
+            - if hours_left <= 0
+              %span.text-danger Expired
+            - elsif hours_left < 24
+              %span.text-warning= "#{hours_left.round(1)}h left"
+            - else
+              %span.text-muted= "#{(hours_left / 24).round(1)} days left"
+        %td
+          %span{ class: "badge badge-#{status_badge_class(listing.status)}" }
+            = listing.status.humanize
+        %td.actions
+          = link_to t('view'), admin_surplus_listing_path(listing), class: 'button small'
+          = link_to t('edit'), edit_admin_surplus_listing_path(listing), class: 'button small'
+
+- if @surplus_listings.empty?
+  %p.no-objects= t('admin.surplus_listings.none')
+
+= paginate @surplus_listings

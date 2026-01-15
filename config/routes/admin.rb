@@ -126,5 +126,16 @@ Openfoodnetwork::Application.routes.draw do
 
     get '/reports', to: 'reports#index', as: :reports
     match '/reports/:report_type(/:report_subtype)', to: 'reports#show', via: [:get, :post], as: :report
+
+    # Don't Waste Surplus Module
+    resources :surplus_listings do
+      collection do
+        get :mine
+      end
+      member do
+        post :publish
+        post :cancel
+      end
+    end
   end
 end

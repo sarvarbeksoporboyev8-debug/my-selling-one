@@ -19,3 +19,10 @@
       every: "5m"
     OrderCycleClosingJob:
       every: "5m"
+    # Don't Waste Surplus Module Jobs
+    Surplus::ExpireListingsJob:
+      every: "5m"
+    Surplus::ExpireReservationsJob:
+      every: "5m"
+    Surplus::ExpireOffersJob:
+      every: "15m"

@@ -1,0 +1,129 @@
+= form_for [:admin, @surplus_listing], html: { class: 'surplus-listing-form', multipart: true } do |f|
+  - if @surplus_listing.errors.any?
+    .flash.error
+      %ul
+        - @surplus_listing.errors.full_messages.each do |msg|
+          %li= msg
+
+  %fieldset
+    %legend= t('admin.surplus_listings.basic_info')
+
+    .row
+      .alpha.six.columns
+        = f.label :enterprise_id, t('admin.surplus_listings.enterprise')
+        = f.collection_select :enterprise_id, @enterprises, :id, :name,
+          { prompt: t('admin.surplus_listings.select_enterprise') },
+          { class: 'select2', required: true }
+
+      .omega.six.columns
+        = f.label :variant_id, t('admin.surplus_listings.product_variant')
+        = f.collection_select :variant_id, @variants, :id, :name_to_display,
+          { prompt: t('admin.surplus_listings.select_variant') },
+          { class: 'select2', required: true }
+
+    .row
+      .alpha.eight.columns
+        = f.label :title, t('admin.surplus_listings.title_optional')
+        = f.text_field :title, placeholder: t('admin.surplus_listings.title_placeholder')
+
+    .row
+      .alpha.twelve.columns
+        = f.label :description, t('admin.surplus_listings.description')
+        = f.text_area :description, rows: 3
+
+    .row
+      .alpha.twelve.columns
+        = f.label :quality_notes, t('admin.surplus_listings.quality_notes')
+        = f.text_area :quality_notes, rows: 2,
+          placeholder: t('admin.surplus_listings.quality_notes_placeholder')
+
+  %fieldset
+    %legend= t('admin.surplus_listings.quantity_pricing')
+
+    .row
+      .alpha.four.columns
+        = f.label :quantity_available, t('admin.surplus_listings.quantity')
+        = f.number_field :quantity_available, step: 0.01, min: 0, required: true
+
+      .two.columns
+        = f.label :unit, t('admin.surplus_listings.unit')
+        = f.select :unit, @units.map { |u| [u, u] }, {}, { required: true }
+
+      .three.columns
+        = f.label :min_order_quantity, t('admin.surplus_listings.min_order')
+        = f.number_field :min_order_quantity, step: 0.01, min: 0
+
+      .omega.three.columns
+        = f.label :base_price, t('admin.surplus_listings.base_price')
+        = f.number_field :base_price, step: 0.01, min: 0, required: true
+
+    .row
+      .alpha.four.columns
+        = f.label :pricing_strategy, t('admin.surplus_listings.pricing_strategy')
+        = f.select :pricing_strategy, @pricing_strategies.map { |s| [s.humanize, s] }
+
+      .four.columns
+        = f.label :markdown_min_price, t('admin.surplus_listings.min_price')
+        = f.number_field :markdown_min_price, step: 0.01, min: 0
+        %small.hint= t('admin.surplus_listings.min_price_hint')
+
+  %fieldset
+    %legend= t('admin.surplus_listings.timing')
+
+    .row
+      .alpha.four.columns
+        = f.label :expires_at, t('admin.surplus_listings.expires_at')
+        = f.datetime_local_field :expires_at, required: true
+
+      .four.columns
+        = f.label :pickup_start_at, t('admin.surplus_listings.pickup_start')
+        = f.datetime_local_field :pickup_start_at, required: true
+
+      .omega.four.columns
+        = f.label :pickup_end_at, t('admin.surplus_listings.pickup_end')
+        = f.datetime_local_field :pickup_end_at, required: true
+
+  %fieldset
+    %legend= t('admin.surplus_listings.visibility')
+
+    .row
+      .alpha.four.columns
+        = f.label :visibility, t('admin.surplus_listings.visibility')
+        = f.select :visibility, @visibility_options.map { |v| [v.humanize, v] }
+
+    #invite-only-options{ style: @surplus_listing.visibility == 'invite_only' ? '' : 'display:none' }
+      .row
+        .alpha.twelve.columns
+          = f.label :allowed_buyer_enterprise_ids, t('admin.surplus_listings.allowed_enterprises')
+          = f.collection_select :allowed_buyer_enterprise_ids, Enterprise.order(:name), :id, :name,
+            {}, { multiple: true, class: 'select2' }
+
+  %fieldset
+    %legend= t('admin.surplus_listings.photos')
+
+    .row
+      .alpha.twelve.columns
+        = f.label :photos, t('admin.surplus_listings.upload_photos')
+        = f.file_field :photos, multiple: true, accept: 'image/*'
+
+        - if @surplus_listing.photos.attached?
+          .existing-photos
+            - @surplus_listing.photos.each do |photo|
+              .photo-thumb
+                = image_tag photo.variant(resize_to_limit: [100, 100])
+
+  .form-actions
+    = f.submit t('save'), class: 'button primary'
+    = link_to t('cancel'), admin_surplus_listings_path, class: 'button'
+
+:javascript
+  document.addEventListener('DOMContentLoaded', function() {
+    var visibilitySelect = document.querySelector('#surplus_listing_visibility');
+    var inviteOnlyOptions = document.querySelector('#invite-only-options');
+
+    if (visibilitySelect && inviteOnlyOptions) {
+      visibilitySelect.addEventListener('change', function() {
+        inviteOnlyOptions.style.display = this.value === 'invite_only' ? '' : 'none';
+      });
+    }
+  });

@@ -67,6 +67,10 @@ class Enterprise < ApplicationRecord
   has_one :stripe_account, dependent: :destroy
   has_many :vouchers
 
+  # Don't Waste surplus module associations
+  has_many :surplus_listings, dependent: :destroy
+  has_many :surplus_metrics, dependent: :destroy
+
   delegate :latitude, :longitude, :city, :state_name, to: :address
 
   accepts_nested_attributes_for :address

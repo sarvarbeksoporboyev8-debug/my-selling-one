@@ -1,0 +1,32 @@
+<h2><%= t('surplus_mailer.reservation_created.heading') %></h2>
+
+<p><%= t('surplus_mailer.reservation_created.intro', enterprise: @enterprise.name) %></p>
+
+<table style="border-collapse: collapse; width: 100%; margin: 20px 0;">
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd;"><strong><%= t('surplus_mailer.product') %></strong></td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @listing.variant&.name_to_display %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd;"><strong><%= t('surplus_mailer.quantity_reserved') %></strong></td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= number_with_precision(@reservation.quantity, precision: 2) %> <%= @listing.unit %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd;"><strong><%= t('surplus_mailer.price') %></strong></td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= number_to_currency(@reservation.price_at_reservation) %>/<%= @listing.unit %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd;"><strong><%= t('surplus_mailer.total') %></strong></td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= number_to_currency(@reservation.total_price) %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd;"><strong><%= t('surplus_mailer.reserved_until') %></strong></td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @reservation.reserved_until.strftime('%B %d, %Y at %H:%M') %></td>
+  </tr>
+  <tr>
+    <td style="padding: 10px; border: 1px solid #ddd;"><strong><%= t('surplus_mailer.buyer') %></strong></td>
+    <td style="padding: 10px; border: 1px solid #ddd;"><%= @buyer.email %></td>
+  </tr>
+</table>
+
+<p><%= t('surplus_mailer.reservation_created.action_required') %></p>

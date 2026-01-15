@@ -91,6 +91,30 @@ Openfoodnetwork::Application.routes.draw do
 
       get '/reports/:report_type(/:report_subtype)', to: 'reports#show',
           constraints: lambda { |_| OpenFoodNetwork::FeatureToggle.enabled?(:api_reports) }
+
+      # Don't Waste Surplus Module
+      resources :surplus_listings do
+        member do
+          post :publish
+          post :cancel
+          post :reserve
+        end
+        resources :offers, controller: 'surplus_offers', only: [:index, :create, :show] do
+          member do
+            post :accept
+            post :reject
+            post :cancel
+          end
+        end
+      end
+
+      resources :surplus_reservations, only: [:index, :show] do
+        member do
+          post :cancel
+        end
+      end
+
+      resources :buyer_watches, only: [:index, :show, :create, :update, :destroy]
     end
 
     namespace :v1 do

@@ -43,6 +43,11 @@ module OpenFoodNetwork
       "white_label" => <<~DESC,
         Customize shopfront (shop, cart, checkout) and emails without OFN branding.
       DESC
+      "dont_waste_surplus" => <<~DESC,
+        Enable the "Don't Waste" B2B surplus module. Allows producers and food
+        businesses to publish perishable surplus lots for other businesses to
+        find and purchase before spoilage.
+      DESC
     }.freeze
 
     # Move your feature entry from CURRENT_FEATURES to RETIRED_FEATURES when
