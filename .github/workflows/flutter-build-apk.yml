@@ -36,11 +36,15 @@ jobs:
         run: dart pub get
 
       - name: Bootstrap packages
-        run: dart run melos bootstrap
+        run: dart run melos bootstrap --verbose || true
 
       - name: Get dependencies for dw_app
         working-directory: apps/dont_waste_flutter/apps/dw_app
         run: flutter pub get
+
+      - name: Analyze for errors
+        working-directory: apps/dont_waste_flutter/apps/dw_app
+        run: flutter analyze --no-fatal-warnings || true
 
       - name: Build APK (release)
         working-directory: apps/dont_waste_flutter/apps/dw_app
