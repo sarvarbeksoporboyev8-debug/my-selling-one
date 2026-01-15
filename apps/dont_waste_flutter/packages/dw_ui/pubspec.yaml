@@ -1,0 +1,20 @@
+name: dw_ui
+description: Design system and shared widgets for DontWaste app
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+  dw_domain:
+    path: ../dw_domain
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1

@@ -1,0 +1,66 @@
+name: Build Flutter APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/dont_waste_flutter/**'
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/dont_waste_flutter
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Melos
+        run: dart pub global activate melos
+
+      - name: Bootstrap packages
+        run: melos bootstrap
+
+      - name: Run build_runner
+        run: melos run build_runner
+
+      - name: Build APK (release)
+        working-directory: apps/dont_waste_flutter/apps/dw_app
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dw-app-release
+          path: apps/dont_waste_flutter/apps/dw_app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+      - name: Build APK (debug)
+        working-directory: apps/dont_waste_flutter/apps/dw_app
+        run: flutter build apk --debug
+
+      - name: Upload Debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dw-app-debug
+          path: apps/dont_waste_flutter/apps/dw_app/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
