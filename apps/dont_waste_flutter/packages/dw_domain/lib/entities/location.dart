@@ -18,6 +18,9 @@ class UserLocation {
   });
 
   String get shortDisplay => displayName ?? city ?? 'Current Location';
+  
+  // Alias for compatibility
+  String? get name => displayName;
 
   double distanceTo(double lat, double lng) {
     const earthRadius = 6371.0; // km
