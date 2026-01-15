@@ -62,6 +62,18 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     state = const AsyncValue.data(null);
   }
 
+  Future<void> loginAsDemo() async {
+    state = const AsyncValue.loading();
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    // Create demo user
+    state = AsyncValue.data(User(
+      id: 0,
+      email: 'demo@dontwaste.app',
+      name: 'Demo User',
+    ));
+  }
+
   Future<void> updateProfile({
     String? name,
     String? phone,

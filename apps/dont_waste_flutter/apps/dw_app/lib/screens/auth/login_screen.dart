@@ -233,6 +233,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: DwSpacing.xl),
 
+                // Demo login button
+                DwOutlinedButton(
+                  onPressed: _isLoading ? null : _handleDemoLogin,
+                  child: const Text('Demo Login (Skip Authentication)'),
+                ),
+                const SizedBox(height: DwSpacing.md),
+
                 // Developer login option
                 TextButton(
                   onPressed: () => _showDevLoginDialog(),
@@ -249,6 +256,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleDemoLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      // Create a demo user without API call
+      await ref.read(authStateProvider.notifier).loginAsDemo();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: DwColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _showDevLoginDialog() async {
