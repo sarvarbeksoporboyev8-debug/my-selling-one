@@ -34,10 +34,6 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   hive_flutter: ^1.1.0
 
-  # Location
-  geolocator: ^10.1.0
-  geocoding: ^2.1.1
-
   # Maps
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
