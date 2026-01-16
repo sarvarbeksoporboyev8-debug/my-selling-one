@@ -14,7 +14,8 @@ class WatchlistScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final watchlist = ref.watch(watchlistProvider);
+    final watchlistAsync = ref.watch(watchlistProvider);
+    final watchlistCount = ref.watch(watchlistCountProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -44,7 +45,7 @@ class WatchlistScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${watchlist.length} saved items',
+                        '$watchlistCount saved items',
                         style: DwDarkTheme.bodyMedium.copyWith(
                           color: DwDarkTheme.textTertiary,
                         ),
@@ -54,7 +55,7 @@ class WatchlistScreen extends ConsumerWidget {
                 ),
               ),
               actions: [
-                if (watchlist.isNotEmpty)
+                if (watchlistCount > 0)
                   IconButton(
                     icon: Container(
                       width: 36,
@@ -76,30 +77,47 @@ class WatchlistScreen extends ConsumerWidget {
             ),
 
             // Content
-            if (watchlist.isEmpty)
-              SliverFillRemaining(
-                child: _buildEmptyState(context),
-              )
-            else
-              SliverPadding(
-                padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final listing = watchlist[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: DwDarkTheme.spacingMd),
-                        child: _WatchlistCard(
-                          listing: listing,
-                          onTap: () => context.push(AppRoutes.listingDetailPath(listing.id)),
-                          onRemove: () => ref.read(watchlistProvider.notifier).remove(listing.id),
-                        ),
-                      );
-                    },
-                    childCount: watchlist.length,
+            watchlistAsync.when(
+              data: (items) {
+                if (items.isEmpty) {
+                  return SliverFillRemaining(
+                    child: _buildEmptyState(context),
+                  );
+                }
+                return SliverPadding(
+                  padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final item = items[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: DwDarkTheme.spacingMd),
+                          child: _WatchlistCard(
+                            listing: item.listing,
+                            onTap: () => context.push(AppRoutes.listingDetailPath(item.listing.id)),
+                            onRemove: () => ref.read(watchlistProvider.notifier).removeFromWatchlist(item.listing.id),
+                          ),
+                        );
+                      },
+                      childCount: items.length,
+                    ),
+                  ),
+                );
+              },
+              loading: () => const SliverFillRemaining(
+                child: Center(
+                  child: CircularProgressIndicator(color: DwDarkTheme.accent),
+                ),
+              ),
+              error: (error, _) => SliverFillRemaining(
+                child: Center(
+                  child: Text(
+                    'Error loading watchlist',
+                    style: DwDarkTheme.bodyMedium.copyWith(color: DwDarkTheme.textTertiary),
                   ),
                 ),
               ),
+            ),
           ],
         ),
       ),
@@ -201,7 +219,11 @@ class WatchlistScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () {
-              ref.read(watchlistProvider.notifier).clear();
+              // Clear all items one by one
+              final items = ref.read(watchlistProvider).valueOrNull ?? [];
+              for (final item in items) {
+                ref.read(watchlistProvider.notifier).removeFromWatchlist(item.listing.id);
+              }
               Navigator.pop(context);
             },
             child: Text(
