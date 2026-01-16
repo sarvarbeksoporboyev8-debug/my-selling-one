@@ -393,7 +393,7 @@ class _FeaturedCard extends StatelessWidget {
                           : _buildPlaceholder(),
                     ),
                   ),
-                  if (listing.discountPercent > 0)
+                  if (listing.hasDiscount)
                     Positioned(
                       top: 8,
                       left: 8,
@@ -404,7 +404,7 @@ class _FeaturedCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '-${listing.discountPercent.toStringAsFixed(0)}%',
+                          '-${listing.discountPercentage!.toStringAsFixed(0)}%',
                           style: DwDarkTheme.labelSmall.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,

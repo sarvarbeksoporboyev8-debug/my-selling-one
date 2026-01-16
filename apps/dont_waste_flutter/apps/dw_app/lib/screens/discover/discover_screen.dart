@@ -187,8 +187,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final filteredListings = _selectedCategory == null
         ? listings
         : listings.where((l) {
-            final cat = l.category?.toLowerCase() ?? '';
-            return cat.contains(_selectedCategory!);
+            // Check taxons for category match
+            final taxonNames = l.taxons.map((t) => t.name.toLowerCase()).join(' ');
+            final title = l.safeTitle.toLowerCase();
+            return taxonNames.contains(_selectedCategory!) || title.contains(_selectedCategory!);
           }).toList();
 
     if (filteredListings.isEmpty) {
@@ -385,7 +387,7 @@ class _ListingCard extends StatelessWidget {
                     ),
                   ),
                   // Discount badge
-                  if (listing.discountPercent > 0)
+                  if (listing.hasDiscount)
                     Positioned(
                       top: 8,
                       left: 8,
@@ -396,7 +398,7 @@ class _ListingCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          '-${listing.discountPercent.toStringAsFixed(0)}%',
+                          '-${listing.discountPercentage!.toStringAsFixed(0)}%',
                           style: DwDarkTheme.labelSmall.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
