@@ -22,33 +22,4 @@ plugins {
     id "org.jetbrains.kotlin.android" version "1.9.0" apply false
 }
 
-// Load Mapbox token from gradle.properties
-def mapboxToken = System.getenv("MAPBOX_DOWNLOADS_TOKEN")
-if (mapboxToken == null || mapboxToken.isEmpty()) {
-    def propsFile = file("gradle.properties")
-    if (propsFile.exists()) {
-        def props = new Properties()
-        propsFile.withInputStream { props.load(it) }
-        mapboxToken = props.getProperty("MAPBOX_DOWNLOADS_TOKEN", "")
-    }
-}
-
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
-    repositories {
-        google()
-        mavenCentral()
-        maven {
-            url 'https://api.mapbox.com/downloads/v2/releases/maven'
-            authentication {
-                basic(BasicAuthentication)
-            }
-            credentials {
-                username = "mapbox"
-                password = mapboxToken ?: ""
-            }
-        }
-    }
-}
-
 include ":app"

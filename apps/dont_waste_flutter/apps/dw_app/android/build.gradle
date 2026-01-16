@@ -1,7 +1,28 @@
+// Load Mapbox token
+def mapboxToken = System.getenv("MAPBOX_DOWNLOADS_TOKEN")
+if (mapboxToken == null || mapboxToken.isEmpty()) {
+    def propsFile = rootProject.file("gradle.properties")
+    if (propsFile.exists()) {
+        def props = new Properties()
+        propsFile.withInputStream { props.load(it) }
+        mapboxToken = props.getProperty("MAPBOX_DOWNLOADS_TOKEN", "")
+    }
+}
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url 'https://api.mapbox.com/downloads/v2/releases/maven'
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = "mapbox"
+                password = mapboxToken ?: ""
+            }
+        }
     }
 }
 
@@ -18,9 +39,9 @@ subprojects {
 }
 
 ext {
-    compileSdkVersion = 34
+    compileSdkVersion = 35
     minSdkVersion = 21
-    targetSdkVersion = 34
+    targetSdkVersion = 35
 }
 
 rootProject.buildDir = '../build'
