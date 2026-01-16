@@ -36,6 +36,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Configure EAS project
+        run: |
+          # Initialize EAS project if not already configured
+          if ! grep -q "extra.*eas.*projectId" app.json; then
+            eas init --non-interactive
+          fi
+
       - name: Build APK
         run: eas build --platform android --profile preview --non-interactive
 
