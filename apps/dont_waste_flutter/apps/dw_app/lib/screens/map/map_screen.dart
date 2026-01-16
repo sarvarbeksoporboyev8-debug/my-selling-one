@@ -72,7 +72,13 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     // Create annotation manager for markers
     try {
       _annotationManager = await mapboxMap.annotations.createPointAnnotationManager();
-      debugPrint('MapScreen: Annotation manager created');
+      
+      // Set up tap listener for annotations
+      _annotationManager!.addOnPointAnnotationClickListener(
+        _AnnotationClickListener(onAnnotationClick: _onAnnotationTapped),
+      );
+      
+      debugPrint('MapScreen: Annotation manager created with click listener');
     } catch (e) {
       debugPrint('MapScreen: Error creating annotation manager: $e');
     }
@@ -81,6 +87,30 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     
     // Add listing markers
     _addListingMarkers();
+  }
+
+  void _onAnnotationTapped(PointAnnotation annotation) {
+    // Find the listing that matches this annotation's coordinates
+    final listingsState = ref.read(listingsProvider);
+    listingsState.whenData((state) {
+      for (final listing in state.listings) {
+        if (listing.latitude != null && listing.longitude != null) {
+          final annotationCoords = annotation.geometry.coordinates;
+          // Check if coordinates match (with small tolerance for floating point)
+          if ((annotationCoords.lng - listing.longitude!).abs() < 0.0001 &&
+              (annotationCoords.lat - listing.latitude!).abs() < 0.0001) {
+            setState(() => _selectedListing = listing);
+            
+            // Animate to the listing location
+            _animateToLocation(
+              Point(coordinates: Position(listing.longitude!, listing.latitude!)),
+              zoom: 17.0,
+            );
+            break;
+          }
+        }
+      }
+    });
   }
 
   void _onStyleLoaded(StyleLoadedEventData data) {
@@ -102,22 +132,29 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
       // Add markers for each listing
       for (final listing in state.listings) {
         if (listing.latitude != null && listing.longitude != null) {
+          final isSelected = _selectedListing?.id == listing.id;
+          
           final options = PointAnnotationOptions(
             geometry: Point(
               coordinates: Position(listing.longitude!, listing.latitude!),
             ),
-            iconSize: 1.0,
+            // Use text as the marker (price tag style)
             textField: '\$${listing.currentPrice.toStringAsFixed(0)}',
-            textSize: 12.0,
-            textColor: Colors.white.value,
-            textHaloColor: const Color(0xFF0D1117).value,
-            textHaloWidth: 1.5,
-            textOffset: [0.0, -2.5],
+            textSize: isSelected ? 14.0 : 12.0,
+            textColor: isSelected ? const Color(0xFF3FB950).value : Colors.white.value,
+            textHaloColor: const Color(0xFF161B22).value,
+            textHaloWidth: 2.0,
+            textAnchor: TextAnchor.BOTTOM,
+            // Add a circle icon behind the text
+            iconSize: isSelected ? 1.2 : 1.0,
+            iconColor: isSelected ? const Color(0xFF3FB950).value : const Color(0xFF58A6FF).value,
           );
           
           await _annotationManager!.create(options);
         }
       }
+      
+      debugPrint('MapScreen: Added ${state.listings.length} markers');
     });
   }
 
@@ -680,5 +717,17 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         ),
       ),
     );
+  }
+}
+
+/// Listener for annotation click events
+class _AnnotationClickListener extends OnPointAnnotationClickListener {
+  final void Function(PointAnnotation) onAnnotationClick;
+
+  _AnnotationClickListener({required this.onAnnotationClick});
+
+  @override
+  void onPointAnnotationClick(PointAnnotation annotation) {
+    onAnnotationClick(annotation);
   }
 }
