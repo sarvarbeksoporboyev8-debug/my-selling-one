@@ -37,11 +37,7 @@ jobs:
         run: npm ci
 
       - name: Configure EAS project
-        run: |
-          # Initialize EAS project if not already configured
-          if ! grep -q "extra.*eas.*projectId" app.json; then
-            eas init --non-interactive
-          fi
+        run: eas init --id ${{ secrets.EAS_PROJECT_ID }} --non-interactive
 
       - name: Build APK
         run: eas build --platform android --profile preview --non-interactive
