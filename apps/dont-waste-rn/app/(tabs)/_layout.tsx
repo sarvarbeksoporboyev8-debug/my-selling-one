@@ -1,23 +1,36 @@
 import { Tabs } from 'expo-router';
-import { View, Text } from 'react-native';
-import { Home, Search, PlusCircle, Bell, User } from 'lucide-react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import {
+  Home,
+  Search,
+  Map,
+  ShoppingBag,
+  User,
+  Package,
+  Truck,
+  DollarSign,
+} from 'lucide-react-native';
+import { useTheme, useAuth } from '../../src/contexts';
 
 type TabIconProps = {
   focused: boolean;
   icon: React.ReactNode;
   label: string;
+  colors: ReturnType<typeof useTheme>['colors'];
 };
 
-function TabIcon({ focused, icon, label }: TabIconProps) {
+function TabIcon({ focused, icon, label, colors }: TabIconProps) {
   return (
-    <View className="items-center justify-center pt-2">
-      <View className={focused ? 'opacity-100' : 'opacity-50'}>
-        {icon}
-      </View>
+    <View style={styles.tabIcon}>
+      <View style={{ opacity: focused ? 1 : 0.5 }}>{icon}</View>
       <Text
-        className={`text-[10px] mt-1 ${
-          focused ? 'text-white font-medium' : 'text-gray-500'
-        }`}
+        style={[
+          styles.tabLabel,
+          {
+            color: focused ? colors.tabBar.active : colors.tabBar.inactive,
+            fontWeight: focused ? '600' : '400',
+          },
+        ]}
       >
         {label}
       </Text>
@@ -26,74 +39,162 @@ function TabIcon({ focused, icon, label }: TabIconProps) {
 }
 
 export default function TabLayout() {
+  const { colors } = useTheme();
+  const { user } = useAuth();
+  const role = user?.role || 'buyer';
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0A0A0B',
-          borderTopColor: '#1A1A1B',
+          backgroundColor: colors.tabBar.background,
+          borderTopColor: colors.tabBar.border,
           borderTopWidth: 1,
-          height: 80,
-          paddingBottom: 20,
+          height: 85,
+          paddingBottom: 25,
+          paddingTop: 10,
         },
         tabBarShowLabel: false,
-        tabBarActiveTintColor: '#FFFFFF',
-        tabBarInactiveTintColor: '#6B7280',
+        tabBarActiveTintColor: colors.tabBar.active,
+        tabBarInactiveTintColor: colors.tabBar.inactive,
       }}
     >
+      {/* Home/Dashboard - visible to all */}
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: role === 'seller' ? 'Dashboard' : role === 'delivery' ? 'Available' : 'Home',
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={<Home size={24} color={focused ? '#FFFFFF' : '#6B7280'} />}
-              label="Home"
+              icon={<Home size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
+              label={role === 'seller' ? 'Dashboard' : role === 'delivery' ? 'Available' : 'Home'}
+              colors={colors}
             />
           ),
         }}
       />
+
+      {/* Discover - Buyer only */}
       <Tabs.Screen
-        name="search"
+        name="discover"
         options={{
-          title: 'Search',
+          title: 'Discover',
+          href: role === 'buyer' ? ('/(tabs)/discover' as any) : null,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={<Search size={24} color={focused ? '#FFFFFF' : '#6B7280'} />}
-              label="Search"
+              icon={<Search size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
+              label="Discover"
+              colors={colors}
             />
           ),
         }}
       />
+
+      {/* Listings - Seller only */}
       <Tabs.Screen
-        name="add"
+        name="listings"
         options={{
-          title: 'Add',
+          title: 'Listings',
+          href: role === 'seller' ? ('/(tabs)/listings' as any) : null,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={<PlusCircle size={28} color={focused ? '#10B981' : '#10B981'} />}
-              label="Add"
+              icon={<Package size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
+              label="Listings"
+              colors={colors}
             />
           ),
         }}
       />
+
+      {/* Active Delivery - Delivery only */}
       <Tabs.Screen
-        name="notifications"
+        name="active-delivery"
         options={{
-          title: 'Alerts',
+          title: 'Active',
+          href: role === 'delivery' ? ('/(tabs)/active-delivery' as any) : null,
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={<Bell size={24} color={focused ? '#FFFFFF' : '#6B7280'} />}
-              label="Alerts"
+              icon={<Truck size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
+              label="Active"
+              colors={colors}
             />
           ),
         }}
       />
+
+      {/* Map - visible to all */}
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Map',
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              icon={<Map size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
+              label="Map"
+              colors={colors}
+            />
+          ),
+        }}
+      />
+
+      {/* Orders - Buyer only */}
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: 'Orders',
+          href: role === 'buyer' ? ('/(tabs)/orders' as any) : null,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              icon={<ShoppingBag size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
+              label="Orders"
+              colors={colors}
+            />
+          ),
+        }}
+      />
+
+      {/* Seller Orders - Seller only */}
+      <Tabs.Screen
+        name="seller-orders"
+        options={{
+          title: 'Orders',
+          href: role === 'seller' ? ('/(tabs)/seller-orders' as any) : null,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              icon={<ShoppingBag size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
+              label="Orders"
+              colors={colors}
+            />
+          ),
+        }}
+      />
+
+      {/* Earnings - Delivery only */}
+      <Tabs.Screen
+        name="earnings"
+        options={{
+          title: 'Earnings',
+          href: role === 'delivery' ? ('/(tabs)/earnings' as any) : null,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              icon={<DollarSign size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
+              label="Earnings"
+              colors={colors}
+            />
+          ),
+        }}
+      />
+
+      {/* Profile - visible to all */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -101,8 +202,9 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              icon={<User size={24} color={focused ? '#FFFFFF' : '#6B7280'} />}
+              icon={<User size={24} color={focused ? colors.tabBar.active : colors.tabBar.inactive} />}
               label="Profile"
+              colors={colors}
             />
           ),
         }}
@@ -110,3 +212,15 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabIcon: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 4,
+  },
+  tabLabel: {
+    fontSize: 10,
+    marginTop: 4,
+  },
+});

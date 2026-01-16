@@ -1,14 +1,119 @@
 /**
- * Premium dark theme color palette for Don't Waste app
+ * Premium theme color palette for Don't Waste app
+ * Supports both light and dark modes
  */
 
-export const colors = {
+export const lightColors = {
+  // Background colors
+  background: {
+    primary: '#FFFFFF',
+    secondary: '#F8F9FA',
+    tertiary: '#F1F3F5',
+    elevated: '#FFFFFF',
+  },
+
+  // Surface colors for cards
+  surface: {
+    primary: '#FFFFFF',
+    secondary: '#F8F9FA',
+    tertiary: '#F1F3F5',
+  },
+
+  // Text colors
+  text: {
+    primary: '#09090B',
+    secondary: '#52525B',
+    tertiary: '#71717A',
+    muted: '#A1A1AA',
+    inverse: '#FFFFFF',
+  },
+
+  // Border colors
+  border: {
+    default: '#E4E4E7',
+    subtle: '#F4F4F5',
+    strong: '#D4D4D8',
+  },
+
+  // Brand colors
+  brand: {
+    primary: '#10B981',
+    primaryLight: '#34D399',
+    primaryDark: '#059669',
+    secondary: '#3B82F6',
+  },
+
+  // Status colors
+  status: {
+    success: '#10B981',
+    successLight: 'rgba(16, 185, 129, 0.1)',
+    warning: '#F59E0B',
+    warningLight: 'rgba(245, 158, 11, 0.1)',
+    error: '#EF4444',
+    errorLight: 'rgba(239, 68, 68, 0.1)',
+    info: '#3B82F6',
+    infoLight: 'rgba(59, 130, 246, 0.1)',
+  },
+
+  // Role colors
+  role: {
+    seller: '#8B5CF6',
+    sellerLight: 'rgba(139, 92, 246, 0.1)',
+    buyer: '#3B82F6',
+    buyerLight: 'rgba(59, 130, 246, 0.1)',
+    delivery: '#F59E0B',
+    deliveryLight: 'rgba(245, 158, 11, 0.1)',
+  },
+
+  // Category colors
+  category: {
+    food: '#10B981',
+    electronics: '#3B82F6',
+    clothing: '#EC4899',
+    furniture: '#F59E0B',
+    other: '#6B7280',
+  },
+
+  // Order status colors
+  orderStatus: {
+    pending: '#F59E0B',
+    confirmed: '#3B82F6',
+    readyForPickup: '#8B5CF6',
+    inDelivery: '#F97316',
+    delivered: '#10B981',
+    cancelled: '#EF4444',
+  },
+
+  // Tab bar
+  tabBar: {
+    background: '#FFFFFF',
+    border: '#E4E4E7',
+    active: '#10B981',
+    inactive: '#71717A',
+  },
+
+  // Overlay
+  overlay: {
+    light: 'rgba(0, 0, 0, 0.05)',
+    medium: 'rgba(0, 0, 0, 0.1)',
+    dark: 'rgba(0, 0, 0, 0.5)',
+  },
+} as const;
+
+export const darkColors = {
   // Background colors
   background: {
     primary: '#0A0A0B',
     secondary: '#1A1A1B',
     tertiary: '#2A2A2B',
     elevated: '#1F1F20',
+  },
+
+  // Surface colors for cards
+  surface: {
+    primary: '#1A1A1B',
+    secondary: '#242428',
+    tertiary: '#2E2E32',
   },
 
   // Text colors
@@ -29,60 +134,62 @@ export const colors = {
 
   // Brand colors
   brand: {
-    primary: '#10B981', // Emerald
+    primary: '#10B981',
     primaryLight: '#34D399',
     primaryDark: '#059669',
-    secondary: '#3B82F6', // Blue
+    secondary: '#3B82F6',
   },
 
   // Status colors
   status: {
-    // Expiry urgency levels
-    expired: '#EF4444',
-    expiringSoon: '#F59E0B', // 1-2 days
-    expiringMedium: '#FBBF24', // 3-5 days
-    fresh: '#10B981', // 5+ days
-
-    // General status
     success: '#10B981',
+    successLight: 'rgba(16, 185, 129, 0.2)',
     warning: '#F59E0B',
+    warningLight: 'rgba(245, 158, 11, 0.2)',
     error: '#EF4444',
+    errorLight: 'rgba(239, 68, 68, 0.2)',
     info: '#3B82F6',
+    infoLight: 'rgba(59, 130, 246, 0.2)',
   },
 
-  // Category colors (with opacity variants)
+  // Role colors
+  role: {
+    seller: '#8B5CF6',
+    sellerLight: 'rgba(139, 92, 246, 0.2)',
+    buyer: '#3B82F6',
+    buyerLight: 'rgba(59, 130, 246, 0.2)',
+    delivery: '#F59E0B',
+    deliveryLight: 'rgba(245, 158, 11, 0.2)',
+  },
+
+  // Category colors
   category: {
-    dairy: {
-      base: '#3B82F6',
-      light: 'rgba(59, 130, 246, 0.2)',
-    },
-    fruits: {
-      base: '#EF4444',
-      light: 'rgba(239, 68, 68, 0.2)',
-    },
-    vegetables: {
-      base: '#10B981',
-      light: 'rgba(16, 185, 129, 0.2)',
-    },
-    meat: {
-      base: '#F97316',
-      light: 'rgba(249, 115, 22, 0.2)',
-    },
-    beverages: {
-      base: '#8B5CF6',
-      light: 'rgba(139, 92, 246, 0.2)',
-    },
-    grains: {
-      base: '#F59E0B',
-      light: 'rgba(245, 158, 11, 0.2)',
-    },
-    other: {
-      base: '#6B7280',
-      light: 'rgba(107, 114, 128, 0.2)',
-    },
+    food: '#10B981',
+    electronics: '#3B82F6',
+    clothing: '#EC4899',
+    furniture: '#F59E0B',
+    other: '#6B7280',
   },
 
-  // Overlay colors
+  // Order status colors
+  orderStatus: {
+    pending: '#F59E0B',
+    confirmed: '#3B82F6',
+    readyForPickup: '#8B5CF6',
+    inDelivery: '#F97316',
+    delivered: '#10B981',
+    cancelled: '#EF4444',
+  },
+
+  // Tab bar
+  tabBar: {
+    background: '#0A0A0B',
+    border: '#1A1A1B',
+    active: '#FFFFFF',
+    inactive: '#6B7280',
+  },
+
+  // Overlay
   overlay: {
     light: 'rgba(255, 255, 255, 0.05)',
     medium: 'rgba(255, 255, 255, 0.1)',
@@ -90,4 +197,5 @@ export const colors = {
   },
 } as const;
 
-export type Colors = typeof colors;
+export type ThemeColors = typeof lightColors;
+export type ColorScheme = 'light' | 'dark' | 'system';
