@@ -23,6 +23,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   PointAnnotationManager? _annotationManager;
   SurplusListing? _selectedListing;
   bool _isMapReady = false;
+  bool _tokenSet = false;
 
   // San Francisco center
   static final _defaultCenter = Point(coordinates: Position(-122.4194, 37.7749));
@@ -41,6 +42,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   @override
   void initState() {
     super.initState();
+    _initMapbox();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1500),
@@ -48,6 +50,12 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+  }
+
+  Future<void> _initMapbox() async {
+    // Set the access token BEFORE creating the map widget
+    MapboxOptions.setAccessToken(_mapboxToken);
+    setState(() => _tokenSet = true);
   }
 
   @override
@@ -59,13 +67,28 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   void _onMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
     
+    debugPrint('MapScreen: Map created successfully');
+    
     // Create annotation manager for markers
-    _annotationManager = await mapboxMap.annotations.createPointAnnotationManager();
+    try {
+      _annotationManager = await mapboxMap.annotations.createPointAnnotationManager();
+      debugPrint('MapScreen: Annotation manager created');
+    } catch (e) {
+      debugPrint('MapScreen: Error creating annotation manager: $e');
+    }
     
     setState(() => _isMapReady = true);
     
     // Add listing markers
     _addListingMarkers();
+  }
+
+  void _onStyleLoaded(StyleLoadedEventData data) {
+    debugPrint('MapScreen: Style loaded successfully');
+  }
+
+  void _onMapLoadError(MapLoadingErrorEventData data) {
+    debugPrint('MapScreen: Map loading error - ${data.message}');
   }
 
   void _addListingMarkers() async {
@@ -89,7 +112,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
             textColor: Colors.white.value,
             textHaloColor: const Color(0xFF0D1117).value,
             textHaloWidth: 1.5,
-            textOffset: [0, -2.5],
+            textOffset: [0.0, -2.5],
           );
           
           await _annotationManager!.create(options);
@@ -161,21 +184,31 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
         backgroundColor: const Color(0xFF0D1117),
         body: Stack(
           children: [
-            // Mapbox Map
-            MapWidget(
-              key: const ValueKey('mapWidget'),
-              cameraOptions: CameraOptions(
-                center: _defaultCenter,
-                zoom: _defaultZoom,
-                pitch: _defaultPitch,
-                bearing: _defaultBearing,
+            // Mapbox Map - only show when token is set
+            if (_tokenSet)
+              Positioned.fill(
+                child: MapWidget(
+                  key: const ValueKey('mapWidget'),
+                  resourceOptions: ResourceOptions(accessToken: _mapboxToken),
+                  cameraOptions: CameraOptions(
+                    center: _defaultCenter,
+                    zoom: _defaultZoom,
+                    pitch: _defaultPitch,
+                    bearing: _defaultBearing,
+                  ),
+                  styleUri: MapboxStyles.DARK,
+                  onMapCreated: _onMapCreated,
+                  onStyleLoadedListener: _onStyleLoaded,
+                  onMapLoadErrorListener: _onMapLoadError,
+                  onTapListener: (context) {
+                    setState(() => _selectedListing = null);
+                  },
+                ),
+              )
+            else
+              const Center(
+                child: CircularProgressIndicator(color: DwDarkTheme.accent),
               ),
-              styleUri: MapboxStyles.DARK,
-              onMapCreated: _onMapCreated,
-              onTapListener: (context) {
-                setState(() => _selectedListing = null);
-              },
-            ),
 
             // Top search bar overlay
             Positioned(
@@ -213,6 +246,26 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                 right: 16,
                 bottom: 24,
                 child: _buildSelectedListingCard(),
+              ),
+              
+            // Debug info (temporary)
+            if (!_isMapReady && _tokenSet)
+              Positioned(
+                bottom: 120,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Loading map...',
+                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
           ],
         ),
@@ -546,7 +599,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
                     child: Container(
                       width: 28,
                       height: 28,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: DwDarkTheme.surfaceHighlight,
                         shape: BoxShape.circle,
                       ),
