@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dw_ui/dw_ui.dart';
 
+import '../../providers/providers.dart';
 import 'widgets/widgets.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -80,6 +81,38 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       setState(() => _emailNotifications = value);
                     },
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+
+            // Appearance section
+            SettingsSectionCard(
+              title: 'Appearance',
+              items: [
+                SettingsItem(
+                  icon: getThemeModeIcon(ref.watch(themeModeProvider)),
+                  title: 'Theme',
+                  subtitle: getThemeModeLabel(ref.watch(themeModeProvider)),
+                  iconColor: DwDarkTheme.accentPurple,
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: DwDarkTheme.spacingSm,
+                      vertical: DwDarkTheme.spacingXs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: DwDarkTheme.accentPurple.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+                    ),
+                    child: Text(
+                      getThemeModeLabel(ref.watch(themeModeProvider)),
+                      style: DwDarkTheme.labelSmall.copyWith(
+                        color: DwDarkTheme.accentPurple,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  onTap: () => _showThemePicker(ref),
                 ),
               ],
             ),
@@ -199,6 +232,130 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       activeTrackColor: DwDarkTheme.accentGreen.withOpacity(0.3),
       inactiveThumbColor: DwDarkTheme.textMuted,
       inactiveTrackColor: DwDarkTheme.surfaceHighlight,
+    );
+  }
+
+  void _showThemePicker(WidgetRef ref) {
+    final currentTheme = ref.read(themeModeProvider);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: DwDarkTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DwDarkTheme.radiusLg),
+        ),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: DwDarkTheme.cardBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+            Text(
+              'Theme',
+              style: DwDarkTheme.headlineSmall,
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+            _buildThemeOption(
+              ref: ref,
+              title: 'Light',
+              icon: Icons.light_mode,
+              mode: ThemeMode.light,
+              isSelected: currentTheme == ThemeMode.light,
+            ),
+            const SizedBox(height: DwDarkTheme.spacingSm),
+            _buildThemeOption(
+              ref: ref,
+              title: 'Dark',
+              icon: Icons.dark_mode,
+              mode: ThemeMode.dark,
+              isSelected: currentTheme == ThemeMode.dark,
+            ),
+            const SizedBox(height: DwDarkTheme.spacingSm),
+            _buildThemeOption(
+              ref: ref,
+              title: 'System',
+              icon: Icons.brightness_auto,
+              mode: ThemeMode.system,
+              isSelected: currentTheme == ThemeMode.system,
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOption({
+    required WidgetRef ref,
+    required String title,
+    required IconData icon,
+    required ThemeMode mode,
+    required bool isSelected,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          ref.read(themeModeProvider.notifier).setThemeMode(mode);
+          Navigator.pop(context);
+        },
+        borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
+        child: Container(
+          padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? DwDarkTheme.accentPurple.withOpacity(0.15)
+                : DwDarkTheme.surfaceHighlight,
+            borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
+            border: Border.all(
+              color: isSelected
+                  ? DwDarkTheme.accentPurple.withOpacity(0.5)
+                  : DwDarkTheme.cardBorder,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: isSelected
+                    ? DwDarkTheme.accentPurple
+                    : DwDarkTheme.textSecondary,
+                size: 24,
+              ),
+              const SizedBox(width: DwDarkTheme.spacingMd),
+              Expanded(
+                child: Text(
+                  title,
+                  style: DwDarkTheme.bodyLarge.copyWith(
+                    color: isSelected
+                        ? DwDarkTheme.accentPurple
+                        : DwDarkTheme.textPrimary,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: DwDarkTheme.accentPurple,
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

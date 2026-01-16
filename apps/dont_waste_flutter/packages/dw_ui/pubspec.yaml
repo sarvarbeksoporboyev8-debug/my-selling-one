@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   cached_network_image: ^3.3.1
   shimmer: ^3.0.0
+  flutter_svg: ^2.0.9
   dw_domain:
     path: ../dw_domain
 
@@ -18,3 +19,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
+
+flutter:
+  assets:
+    - assets/icons/
+    - assets/images/
+    - assets/splash/

@@ -33,6 +33,7 @@ dependencies:
   # Storage
   flutter_secure_storage: ^9.0.0
   hive_flutter: ^1.1.0
+  shared_preferences: ^2.2.2
 
   # Maps - Mapbox SDK for 3D buildings and navigation-style rendering
   mapbox_maps_flutter: ^2.1.0

@@ -1,6 +1,9 @@
 /// DontWaste UI library - Design system and shared widgets
 library dw_ui;
 
+// Icons
+export 'icons/dw_icons.dart';
+
 // Theme - new naming
 export 'theme/colors.dart';
 export 'theme/spacing.dart';

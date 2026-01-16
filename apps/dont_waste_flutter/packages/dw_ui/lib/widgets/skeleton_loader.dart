@@ -3,7 +3,7 @@ import 'package:shimmer/shimmer.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
-/// Skeleton loader for loading states
+/// Skeleton loader for loading states with dark mode support
 class SkeletonLoader extends StatelessWidget {
   final double? width;
   final double height;
@@ -18,14 +18,18 @@ class SkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? const Color(0xFF1C1C1F) : AppColors.surfaceVariant;
+    final highlightColor = isDark ? const Color(0xFF27272A) : AppColors.surface;
+
     return Shimmer.fromColors(
-      baseColor: AppColors.surfaceVariant,
-      highlightColor: AppColors.surface,
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: AppColors.surfaceVariant,
+          color: baseColor,
           borderRadius: BorderRadius.circular(borderRadius),
         ),
       ),

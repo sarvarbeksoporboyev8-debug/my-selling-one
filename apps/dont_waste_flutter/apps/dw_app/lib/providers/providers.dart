@@ -6,3 +6,4 @@ export 'listings_provider.dart';
 export 'filters_provider.dart';
 export 'reservations_provider.dart';
 export 'watchlist_provider.dart';
+export 'theme_provider.dart';
