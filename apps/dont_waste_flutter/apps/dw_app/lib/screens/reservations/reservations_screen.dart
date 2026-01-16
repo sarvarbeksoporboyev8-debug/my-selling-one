@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dw_ui/dw_ui.dart';
@@ -6,236 +7,205 @@ import 'package:dw_domain/dw_domain.dart';
 
 import '../../providers/providers.dart';
 import '../../routing/app_routes.dart';
+import 'widgets/widgets.dart';
 
-/// Reservations screen showing user's reservations
-class ReservationsScreen extends ConsumerWidget {
+class ReservationsScreen extends ConsumerStatefulWidget {
   const ReservationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReservationsScreen> createState() => _ReservationsScreenState();
+}
+
+class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
+  ReservationTab _selectedTab = ReservationTab.upcoming;
+  String? _selectedCategory;
+  DateTimeRange? _selectedDateRange;
+
+  @override
+  Widget build(BuildContext context) {
     final reservations = ref.watch(reservationsProvider);
 
-    return DefaultTabController(
-      length: 3,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Reservations'),
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Active'),
-              Tab(text: 'Completed'),
-              Tab(text: 'Cancelled'),
-            ],
-          ),
-        ),
-        body: reservations.when(
-          data: (items) {
-            final active = items.where((r) => r.isActive).toList();
-            final completed = items.where((r) => r.status == ReservationStatus.completed).toList();
-            final cancelled = items.where((r) => r.status == ReservationStatus.cancelled).toList();
+        backgroundColor: DwDarkTheme.background,
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            // App bar
+            SliverAppBar(
+              backgroundColor: DwDarkTheme.background,
+              surfaceTintColor: Colors.transparent,
+              pinned: true,
+              expandedHeight: 100,
+              flexibleSpace: FlexibleSpaceBar(
+                background: Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 16,
+                    left: DwDarkTheme.spacingMd,
+                    right: DwDarkTheme.spacingMd,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Reservations',
+                        style: DwDarkTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Your bookings and pickups',
+                        style: DwDarkTheme.bodyMedium.copyWith(
+                          color: DwDarkTheme.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+          body: Column(
+            children: [
+              // Filter bar with tabs
+              reservations.when(
+                data: (items) {
+                  final upcoming = items.where((r) => r.isActive).toList();
+                  final completed = items.where((r) => r.status == ReservationStatus.completed).toList();
+                  final cancelled = items.where((r) => r.status == ReservationStatus.cancelled).toList();
 
-            return TabBarView(
-              children: [
-                _ReservationList(reservations: active, emptyMessage: 'No active reservations'),
-                _ReservationList(reservations: completed, emptyMessage: 'No completed reservations'),
-                _ReservationList(reservations: cancelled, emptyMessage: 'No cancelled reservations'),
-              ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => DwErrorWidget(
-            message: error.toString(),
-            onRetry: () => ref.invalidate(reservationsProvider),
+                  return ReservationsFilterBar(
+                    selectedTab: _selectedTab,
+                    onTabChanged: (tab) => setState(() => _selectedTab = tab),
+                    onFilterTap: () => _showFilterSheet(context),
+                    upcomingCount: upcoming.length,
+                    completedCount: completed.length,
+                    cancelledCount: cancelled.length,
+                  );
+                },
+                loading: () => ReservationsFilterBar(
+                  selectedTab: _selectedTab,
+                  onTabChanged: (tab) => setState(() => _selectedTab = tab),
+                ),
+                error: (_, __) => ReservationsFilterBar(
+                  selectedTab: _selectedTab,
+                  onTabChanged: (tab) => setState(() => _selectedTab = tab),
+                ),
+              ),
+
+              // Content
+              Expanded(
+                child: reservations.when(
+                  data: (items) => _buildContent(items),
+                  loading: () => const SkeletonReservationList(),
+                  error: (error, _) => ReservationsErrorState(
+                    message: error.toString(),
+                    onRetry: () => ref.invalidate(reservationsProvider),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
-}
 
-class _ReservationList extends StatelessWidget {
-  final List<Reservation> reservations;
-  final String emptyMessage;
+  Widget _buildContent(List<Reservation> items) {
+    // Filter by tab
+    final filteredItems = switch (_selectedTab) {
+      ReservationTab.upcoming => items.where((r) => r.isActive).toList(),
+      ReservationTab.completed => items.where((r) => r.status == ReservationStatus.completed).toList(),
+      ReservationTab.cancelled => items.where((r) => r.status == ReservationStatus.cancelled).toList(),
+    };
 
-  const _ReservationList({
-    required this.reservations,
-    required this.emptyMessage,
-  });
+    // Apply additional filters
+    var displayItems = filteredItems;
+    if (_selectedCategory != null) {
+      // Filter by category if we have category data
+      // For now, this is a placeholder
+    }
+    if (_selectedDateRange != null) {
+      displayItems = displayItems.where((r) {
+        return r.createdAt.isAfter(_selectedDateRange!.start) &&
+            r.createdAt.isBefore(_selectedDateRange!.end.add(const Duration(days: 1)));
+      }).toList();
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    if (reservations.isEmpty) {
-      return DwEmptyState(
-        icon: Icons.receipt_long_outlined,
-        title: emptyMessage,
-        message: 'Your reservations will appear here.',
+    if (displayItems.isEmpty) {
+      return ReservationsEmptyState(
+        tab: _selectedTab,
+        onAction: _selectedTab == ReservationTab.upcoming
+            ? () => context.go(AppRoutes.discover)
+            : null,
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(DwSpacing.md),
-      itemCount: reservations.length,
-      separatorBuilder: (_, __) => const SizedBox(height: DwSpacing.md),
-      itemBuilder: (context, index) {
-        final reservation = reservations[index];
-        return _ReservationCard(reservation: reservation);
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(reservationsProvider);
+        await ref.read(reservationsProvider.future);
       },
+      color: DwDarkTheme.accent,
+      backgroundColor: DwDarkTheme.surface,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
+        itemCount: displayItems.length,
+        separatorBuilder: (_, __) => const SizedBox(height: DwDarkTheme.spacingMd),
+        itemBuilder: (context, index) {
+          final reservation = displayItems[index];
+          return ReservationCard(
+            reservation: reservation,
+            onTap: () => context.push(
+              AppRoutes.reservationDetailPath(reservation.id),
+            ),
+            onDirections: reservation.isActive
+                ? () => _openDirections(reservation)
+                : null,
+            onReorder: reservation.status == ReservationStatus.completed ||
+                    reservation.status == ReservationStatus.cancelled
+                ? () => _reorder(reservation)
+                : null,
+          );
+        },
+      ),
     );
   }
-}
 
-class _ReservationCard extends StatelessWidget {
-  final Reservation reservation;
+  void _showFilterSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => ReservationsFilterSheet(
+        selectedCategory: _selectedCategory,
+        selectedDateRange: _selectedDateRange,
+        onCategoryChanged: (cat) => setState(() => _selectedCategory = cat),
+        onDateRangeChanged: (range) => setState(() => _selectedDateRange = range),
+        onApply: () {},
+        onReset: () => setState(() {
+          _selectedCategory = null;
+          _selectedDateRange = null;
+        }),
+      ),
+    );
+  }
 
-  const _ReservationCard({required this.reservation});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        onTap: () => context.push(
-          AppRoutes.reservationDetailPath(reservation.id),
-        ),
-        borderRadius: BorderRadius.circular(DwRadius.md),
-        child: Padding(
-          padding: const EdgeInsets.all(DwSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with status
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      reservation.listing.safeTitle,
-                      style: DwTextStyles.titleMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  _StatusBadge(status: reservation.status),
-                ],
-              ),
-              const SizedBox(height: DwSpacing.sm),
-
-              // Seller info
-              Text(
-                reservation.listing.seller?.name ?? 'Unknown seller',
-                style: DwTextStyles.bodySmall.copyWith(
-                  color: DwColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: DwSpacing.md),
-
-              // Details row
-              Row(
-                children: [
-                  // Quantity
-                  _DetailChip(
-                    icon: Icons.shopping_bag_outlined,
-                    label: '${reservation.quantity} ${reservation.listing.unit}',
-                  ),
-                  const SizedBox(width: DwSpacing.sm),
-
-                  // Price
-                  _DetailChip(
-                    icon: Icons.attach_money,
-                    label: '\$${reservation.totalPrice.toStringAsFixed(2)}',
-                  ),
-                ],
-              ),
-
-              // Pickup time if confirmed
-              if (reservation.confirmedPickupTime != null) ...[
-                const SizedBox(height: DwSpacing.sm),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.schedule,
-                      size: 16,
-                      color: DwColors.textSecondary,
-                    ),
-                    const SizedBox(width: DwSpacing.xs),
-                    Text(
-                      'Pickup: ${_formatDateTime(reservation.confirmedPickupTime!)}',
-                      style: DwTextStyles.bodySmall.copyWith(
-                        color: DwColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
-          ),
+  void _openDirections(Reservation reservation) {
+    // TODO: Open maps with directions
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Opening directions...'),
+        backgroundColor: DwDarkTheme.surfaceElevated,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
         ),
       ),
     );
   }
 
-  String _formatDateTime(DateTime dt) {
-    return '${dt.day}/${dt.month} at ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final ReservationStatus status;
-
-  const _StatusBadge({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, bgColor) = switch (status) {
-      ReservationStatus.pending => (DwColors.warning, DwColors.warningLight),
-      ReservationStatus.confirmed => (DwColors.info, DwColors.infoLight),
-      ReservationStatus.completed => (DwColors.success, DwColors.successLight),
-      ReservationStatus.cancelled => (DwColors.error, DwColors.errorLight),
-      ReservationStatus.expired => (DwColors.textSecondary, DwColors.surface),
-      _ => (DwColors.textSecondary, DwColors.surface),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: DwSpacing.sm,
-        vertical: DwSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(DwRadius.sm),
-      ),
-      child: Text(
-        status.displayName,
-        style: DwTextStyles.labelSmall.copyWith(color: color),
-      ),
-    );
-  }
-}
-
-class _DetailChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-
-  const _DetailChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: DwSpacing.sm,
-        vertical: DwSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: DwColors.surface,
-        borderRadius: BorderRadius.circular(DwRadius.sm),
-        border: Border.all(color: DwColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: DwColors.textSecondary),
-          const SizedBox(width: DwSpacing.xs),
-          Text(label, style: DwTextStyles.labelSmall),
-        ],
-      ),
-    );
+  void _reorder(Reservation reservation) {
+    // Navigate to listing detail to make a new reservation
+    context.push(AppRoutes.listingDetailPath(reservation.listing.id));
   }
 }
