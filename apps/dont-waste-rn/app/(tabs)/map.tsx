@@ -1,40 +1,38 @@
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useAuth } from '../../src/contexts';
-import { MapPin, Navigation, Layers, Search } from 'lucide-react-native';
-import MapboxGL from '@rnmapbox/maps';
-import { useEffect, useState } from 'react';
+import { MapPin, Navigation, Search, Store, Truck, Package } from 'lucide-react-native';
+import { useState } from 'react';
 
-// Mapbox access token
-const MAPBOX_TOKEN = 'pk.eyJ1Ijoic2FydmFyYmVrc29wb3Jib3lldjgiLCJhIjoiY205MHRlcjZyMDFhMjJqcHZ3NXVwdHdtYyJ9.BXAR2LSQP0Ey8V0djFdXjA';
-
-MapboxGL.setAccessToken(MAPBOX_TOKEN);
-
-const { width, height } = Dimensions.get('window');
-
-// Mock markers for different roles
-const buyerMarkers = [
-  { id: '1', lat: 37.7849, lng: -122.4094, title: 'Green Farm', type: 'food', price: 15 },
-  { id: '2', lat: 37.7899, lng: -122.4014, title: 'Tech Store', type: 'electronics', price: 699 },
-  { id: '3', lat: 37.7799, lng: -122.4194, title: 'Fashion Hub', type: 'clothing', price: 89 },
-  { id: '4', lat: 37.7749, lng: -122.4294, title: 'Home Goods', type: 'furniture', price: 45 },
+// Mock locations for different roles
+const buyerLocations = [
+  { id: '1', name: 'Green Farm', type: 'food', distance: '0.8 km', address: '123 Farm Road', rating: 4.7 },
+  { id: '2', name: 'Tech Store', type: 'electronics', distance: '1.2 km', address: '456 Tech Ave', rating: 4.9 },
+  { id: '3', name: 'Fashion Hub', type: 'clothing', distance: '2.5 km', address: '789 Style St', rating: 4.5 },
+  { id: '4', name: 'Home Goods', type: 'furniture', distance: '3.1 km', address: '321 Home Blvd', rating: 4.8 },
+  { id: '5', name: 'Local Bakery', type: 'food', distance: '0.5 km', address: '555 Baker Lane', rating: 4.9 },
 ];
 
-const deliveryMarkers = [
-  { id: '1', lat: 37.7849, lng: -122.4094, title: 'Pickup: Green Farm', type: 'pickup' },
-  { id: '2', lat: 37.7749, lng: -122.4194, title: 'Dropoff: 123 Main St', type: 'dropoff' },
+const deliveryLocations = [
+  { id: '1', name: 'Pickup: Green Farm', type: 'pickup', distance: '1.2 km', address: '123 Farm Road' },
+  { id: '2', name: 'Dropoff: John D.', type: 'dropoff', distance: '2.5 km', address: '456 Main St, Apt 12' },
+];
+
+const sellerLocations = [
+  { id: '1', name: 'Your Store Location', type: 'store', distance: '0 km', address: '123 Your Address' },
+  { id: '2', name: 'Delivery Zone 1', type: 'zone', distance: '5 km radius', address: 'Downtown Area' },
+  { id: '3', name: 'Delivery Zone 2', type: 'zone', distance: '10 km radius', address: 'Extended Area' },
 ];
 
 export default function MapScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const role = user?.role || 'buyer';
-  const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
-  const markers = role === 'delivery' ? deliveryMarkers : buyerMarkers;
-  const mapStyle = isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11';
+  const locations = role === 'delivery' ? deliveryLocations : role === 'seller' ? sellerLocations : buyerLocations;
 
-  const getMarkerColor = (type: string) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
       case 'food':
         return colors.category.food;
@@ -48,188 +46,216 @@ export default function MapScreen() {
         return colors.brand.primary;
       case 'dropoff':
         return colors.status.error;
+      case 'store':
+        return colors.role.seller;
+      case 'zone':
+        return colors.status.info;
       default:
         return colors.brand.primary;
     }
   };
 
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'pickup':
+        return <Package size={18} color="#FFFFFF" />;
+      case 'dropoff':
+        return <MapPin size={18} color="#FFFFFF" />;
+      case 'store':
+        return <Store size={18} color="#FFFFFF" />;
+      case 'zone':
+        return <Navigation size={18} color="#FFFFFF" />;
+      default:
+        return <Store size={18} color="#FFFFFF" />;
+    }
+  };
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background.primary }}>
-      {/* Map */}
-      <MapboxGL.MapView
-        style={styles.map}
-        styleURL={mapStyle}
-        logoEnabled={false}
-        attributionEnabled={false}
-      >
-        <MapboxGL.Camera
-          zoomLevel={13}
-          centerCoordinate={[-122.4094, 37.7849]}
-          animationMode="flyTo"
-          animationDuration={2000}
-        />
-
-        {/* User Location */}
-        <MapboxGL.UserLocation visible={true} />
-
-        {/* Markers */}
-        {markers.map((marker) => (
-          <MapboxGL.PointAnnotation
-            key={marker.id}
-            id={marker.id}
-            coordinate={[marker.lng, marker.lat]}
-            onSelected={() => setSelectedMarker(marker.id)}
-          >
-            <View
-              style={[
-                styles.marker,
-                {
-                  backgroundColor: getMarkerColor(marker.type),
-                  borderColor: colors.background.primary,
-                },
-              ]}
-            >
-              <MapPin size={16} color="#FFFFFF" />
-            </View>
-            <MapboxGL.Callout title={marker.title} />
-          </MapboxGL.PointAnnotation>
-        ))}
-      </MapboxGL.MapView>
-
-      {/* Search Overlay */}
-      <SafeAreaView style={styles.overlay}>
-        <TouchableOpacity
-          style={[
-            styles.searchBar,
-            {
-              backgroundColor: colors.surface.primary,
-              borderColor: colors.border.default,
-            },
-          ]}
-        >
-          <Search size={20} color={colors.text.tertiary} />
-          <Text style={[styles.searchText, { color: colors.text.tertiary }]}>
-            Search on map...
-          </Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-
-      {/* Map Controls */}
-      <View style={[styles.controls, { bottom: 120 }]}>
-        <TouchableOpacity
-          style={[
-            styles.controlButton,
-            {
-              backgroundColor: colors.surface.primary,
-              borderColor: colors.border.default,
-            },
-          ]}
-        >
-          <Layers size={20} color={colors.text.secondary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.controlButton,
-            {
-              backgroundColor: colors.brand.primary,
-              borderColor: colors.brand.primary,
-            },
-          ]}
-        >
-          <Navigation size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background.primary }}>
+      {/* Header */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <Text style={{ color: colors.text.primary, fontSize: 28, fontWeight: '700' }}>Map</Text>
+        <Text style={{ color: colors.text.tertiary, marginTop: 4 }}>
+          {role === 'buyer' ? 'Find sellers near you' : role === 'delivery' ? 'Delivery route' : 'Your coverage area'}
+        </Text>
       </View>
 
-      {/* Bottom Card */}
-      {selectedMarker && (
-        <View
-          style={[
-            styles.bottomCard,
-            {
-              backgroundColor: colors.surface.primary,
-              borderColor: colors.border.default,
-            },
-          ]}
-        >
-          <View style={styles.cardHandle}>
-            <View style={[styles.handle, { backgroundColor: colors.border.default }]} />
-          </View>
-          <View style={styles.cardContent}>
-            <Text style={[styles.cardTitle, { color: colors.text.primary }]}>
-              {markers.find((m) => m.id === selectedMarker)?.title}
-            </Text>
-            <Text style={[styles.cardSubtitle, { color: colors.text.tertiary }]}>
-              0.5 km away • Open until 8 PM
-            </Text>
-            <View style={styles.cardActions}>
-              <TouchableOpacity
-                style={[styles.cardButton, { backgroundColor: colors.brand.primary }]}
-              >
-                <Text style={styles.cardButtonText}>View Details</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.cardButton,
-                  {
-                    backgroundColor: 'transparent',
-                    borderWidth: 1,
-                    borderColor: colors.border.default,
-                  },
-                ]}
-              >
-                <Text style={[styles.cardButtonText, { color: colors.text.primary }]}>
-                  Directions
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Role indicator */}
-      <View
+      {/* Search Bar */}
+      <TouchableOpacity
         style={[
-          styles.roleIndicator,
+          styles.searchBar,
           {
-            backgroundColor:
-              role === 'seller'
-                ? colors.role.sellerLight
-                : role === 'delivery'
-                ? colors.role.deliveryLight
-                : colors.role.buyerLight,
+            backgroundColor: colors.surface.primary,
+            borderColor: colors.border.default,
+            marginHorizontal: 16,
+            marginTop: 16,
           },
         ]}
       >
-        <Text
-          style={{
-            color:
-              role === 'seller'
-                ? colors.role.seller
-                : role === 'delivery'
-                ? colors.role.delivery
-                : colors.role.buyer,
-            fontWeight: '600',
-            fontSize: 12,
-          }}
-        >
-          {role === 'seller' ? 'Seller View' : role === 'delivery' ? 'Delivery View' : 'Buyer View'}
+        <Search size={20} color={colors.text.tertiary} />
+        <Text style={{ color: colors.text.tertiary, marginLeft: 12, fontSize: 16 }}>
+          Search locations...
         </Text>
+      </TouchableOpacity>
+
+      {/* Map Placeholder */}
+      <View
+        style={[
+          styles.mapPlaceholder,
+          {
+            backgroundColor: colors.surface.primary,
+            borderColor: colors.border.default,
+            marginHorizontal: 16,
+            marginTop: 16,
+          },
+        ]}
+      >
+        <View style={[styles.mapGrid, { borderColor: colors.border.subtle }]}>
+          {/* Grid lines to simulate map */}
+          {[...Array(5)].map((_, i) => (
+            <View
+              key={`h-${i}`}
+              style={[
+                styles.gridLineH,
+                { backgroundColor: colors.border.subtle, top: `${(i + 1) * 16.66}%` },
+              ]}
+            />
+          ))}
+          {[...Array(5)].map((_, i) => (
+            <View
+              key={`v-${i}`}
+              style={[
+                styles.gridLineV,
+                { backgroundColor: colors.border.subtle, left: `${(i + 1) * 16.66}%` },
+              ]}
+            />
+          ))}
+          
+          {/* Mock markers */}
+          <View style={[styles.mockMarker, { backgroundColor: colors.brand.primary, top: '30%', left: '40%' }]}>
+            <MapPin size={14} color="#FFFFFF" />
+          </View>
+          <View style={[styles.mockMarker, { backgroundColor: colors.category.electronics, top: '50%', left: '60%' }]}>
+            <MapPin size={14} color="#FFFFFF" />
+          </View>
+          <View style={[styles.mockMarker, { backgroundColor: '#EC4899', top: '70%', left: '30%' }]}>
+            <MapPin size={14} color="#FFFFFF" />
+          </View>
+          <View style={[styles.mockMarker, { backgroundColor: colors.category.furniture, top: '40%', left: '70%' }]}>
+            <MapPin size={14} color="#FFFFFF" />
+          </View>
+          
+          {/* Center marker (user location) */}
+          <View style={[styles.userMarker, { borderColor: colors.brand.primary }]}>
+            <View style={[styles.userMarkerInner, { backgroundColor: colors.brand.primary }]} />
+          </View>
+        </View>
+        
+        {/* Map controls */}
+        <View style={styles.mapControls}>
+          <TouchableOpacity
+            style={[styles.controlButton, { backgroundColor: colors.surface.secondary }]}
+          >
+            <Navigation size={20} color={colors.text.secondary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Role indicator */}
+        <View
+          style={[
+            styles.roleIndicator,
+            {
+              backgroundColor:
+                role === 'seller'
+                  ? colors.role.sellerLight
+                  : role === 'delivery'
+                  ? colors.role.deliveryLight
+                  : colors.role.buyerLight,
+            },
+          ]}
+        >
+          <Text
+            style={{
+              color:
+                role === 'seller'
+                  ? colors.role.seller
+                  : role === 'delivery'
+                  ? colors.role.delivery
+                  : colors.role.buyer,
+              fontWeight: '600',
+              fontSize: 12,
+            }}
+          >
+            {role === 'seller' ? 'Seller View' : role === 'delivery' ? 'Delivery View' : 'Buyer View'}
+          </Text>
+        </View>
       </View>
-    </View>
+
+      {/* Locations List */}
+      <View style={{ flex: 1, marginTop: 16 }}>
+        <Text style={{ color: colors.text.primary, fontSize: 18, fontWeight: '600', paddingHorizontal: 16, marginBottom: 12 }}>
+          {role === 'buyer' ? 'Nearby Sellers' : role === 'delivery' ? 'Route Stops' : 'Your Locations'}
+        </Text>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {locations.map((location: any) => (
+            <TouchableOpacity
+              key={location.id}
+              onPress={() => setSelectedLocation(location.id)}
+              style={[
+                styles.locationCard,
+                {
+                  backgroundColor: colors.surface.primary,
+                  borderColor: selectedLocation === location.id ? getTypeColor(location.type) : colors.border.default,
+                  borderWidth: selectedLocation === location.id ? 2 : 1,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.locationIcon,
+                  { backgroundColor: getTypeColor(location.type) },
+                ]}
+              >
+                {getTypeIcon(location.type)}
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={{ color: colors.text.primary, fontSize: 16, fontWeight: '500' }}>
+                  {location.name}
+                </Text>
+                <Text style={{ color: colors.text.tertiary, fontSize: 13, marginTop: 2 }}>
+                  {location.address}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                  <MapPin size={12} color={colors.text.muted} />
+                  <Text style={{ color: colors.text.muted, fontSize: 12, marginLeft: 4 }}>
+                    {location.distance}
+                  </Text>
+                  {location.rating && (
+                    <>
+                      <Text style={{ color: colors.text.muted, marginHorizontal: 8 }}>•</Text>
+                      <Text style={{ color: '#F59E0B', fontSize: 12 }}>★ {location.rating}</Text>
+                    </>
+                  )}
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.directionsButton, { backgroundColor: colors.brand.primary }]}
+              >
+                <Navigation size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  map: {
-    flex: 1,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-  },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -237,102 +263,101 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
-  searchText: {
-    marginLeft: 12,
-    fontSize: 16,
-  },
-  controls: {
-    position: 'absolute',
-    right: 16,
-    gap: 12,
-  },
-  controlButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+  mapPlaceholder: {
+    height: 200,
+    borderRadius: 16,
     borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  marker: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  mapGrid: {
+    flex: 1,
+    position: 'relative',
+  },
+  gridLineH: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+  },
+  gridLineV: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 1,
+  },
+  mockMarker: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
   },
-  bottomCard: {
+  userMarker: {
     position: 'absolute',
-    bottom: 100,
-    left: 16,
-    right: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  cardHandle: {
+    top: '50%',
+    left: '50%',
+    marginTop: -16,
+    marginLeft: -16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 3,
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
     alignItems: 'center',
-    paddingVertical: 12,
+    justifyContent: 'center',
   },
-  handle: {
+  userMarkerInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  mapControls: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+  },
+  controlButton: {
     width: 40,
-    height: 4,
-    borderRadius: 2,
-  },
-  cardContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-  },
-  cardButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
-  },
-  cardButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    justifyContent: 'center',
   },
   roleIndicator: {
     position: 'absolute',
-    top: 100,
-    left: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    top: 12,
+    left: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  locationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  locationIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  directionsButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
