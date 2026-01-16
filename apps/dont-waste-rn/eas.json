@@ -8,12 +8,18 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "MAPBOX_DOWNLOADS_TOKEN": "MAPBOX_DOWNLOADS_TOKEN"
+      },
       "ios": {
         "simulator": true
       }
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "MAPBOX_DOWNLOADS_TOKEN": "MAPBOX_DOWNLOADS_TOKEN"
+      },
       "android": {
         "buildType": "apk",
         "withoutCredentials": true
@@ -23,7 +29,10 @@
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "MAPBOX_DOWNLOADS_TOKEN": "MAPBOX_DOWNLOADS_TOKEN"
+      }
     }
   },
   "submit": {

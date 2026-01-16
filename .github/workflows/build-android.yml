@@ -40,7 +40,9 @@ jobs:
         run: eas init --id ${{ secrets.EAS_PROJECT_ID }} --non-interactive
 
       - name: Build APK
-        run: eas build --platform android --profile preview --non-interactive --no-wait
+        env:
+          MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+        run: eas secret:push --scope project --env-file /dev/stdin <<< "MAPBOX_DOWNLOADS_TOKEN=$MAPBOX_DOWNLOADS_TOKEN" --force || true && eas build --platform android --profile preview --non-interactive --no-wait
 
       - name: Get build URL
         run: |
