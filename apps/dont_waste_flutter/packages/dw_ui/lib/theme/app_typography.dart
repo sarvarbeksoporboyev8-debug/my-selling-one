@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-/// App typography styles
+/// App typography styles using Google Fonts (Inter - similar to SF Pro)
 class AppTypography {
   AppTypography._();
 
-  static const String fontFamily = 'Roboto';
+  // Use Inter as primary font (clean, modern, similar to SF Pro)
+  static String get fontFamily => GoogleFonts.inter().fontFamily!;
+  
+  // Get the text theme with Inter font
+  static TextTheme get textTheme => GoogleFonts.interTextTheme();
+  
+  // For headlines, use Plus Jakarta Sans (similar to Google Sans)
+  static String get headlineFontFamily => GoogleFonts.plusJakartaSans().fontFamily!;
 
   // Display styles
   static const TextStyle displayLarge = TextStyle(

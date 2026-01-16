@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dw_ui/dw_ui.dart';
 
 import '../../providers/providers.dart';
+import '../../routing/app_routes.dart';
 import 'widgets/widgets.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -157,18 +158,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 SettingsItem(
                   icon: Icons.privacy_tip_outlined,
                   title: 'Privacy Policy',
-                  iconColor: DwDarkTheme.textTertiary,
-                  onTap: () {
-                    _showComingSoon();
-                  },
+                  iconColor: DwDarkTheme.accent,
+                  onTap: () => context.push(AppRoutes.privacyPolicy),
                 ),
                 SettingsItem(
                   icon: Icons.description_outlined,
                   title: 'Terms of Service',
-                  iconColor: DwDarkTheme.textTertiary,
-                  onTap: () {
-                    _showComingSoon();
-                  },
+                  iconColor: DwDarkTheme.accent,
+                  onTap: () => context.push(AppRoutes.termsOfService),
+                ),
+                SettingsItem(
+                  icon: Icons.help_outline_rounded,
+                  title: 'Help Center',
+                  iconColor: DwDarkTheme.accentGreen,
+                  onTap: () => context.push(AppRoutes.webView, extra: {
+                    'url': 'https://dontwaste.app/help',
+                    'title': 'Help Center',
+                  }),
                 ),
               ],
             ),
@@ -208,7 +214,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 SettingsItem(
                   icon: Icons.info_outline,
                   title: 'Version',
-                  subtitle: '1.0.0 (1)',
+                  subtitle: '1.2.0 (4)',
                   iconColor: DwDarkTheme.textTertiary,
                   showChevron: false,
                 ),

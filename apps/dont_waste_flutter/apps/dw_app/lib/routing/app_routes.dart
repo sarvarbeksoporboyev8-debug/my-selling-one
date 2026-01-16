@@ -44,4 +44,17 @@ abstract class AppRoutes {
   // Search & Filter
   static const search = '/search';
   static const filters = '/filters';
+
+  // Scanner
+  static const scanner = '/scanner';
+
+  // PDF Viewer
+  static const pdfViewer = '/pdf-viewer';
+
+  // WebView
+  static const webView = '/webview';
+
+  // Common web pages
+  static const termsOfService = '/terms';
+  static const privacyPolicy = '/privacy';
 }

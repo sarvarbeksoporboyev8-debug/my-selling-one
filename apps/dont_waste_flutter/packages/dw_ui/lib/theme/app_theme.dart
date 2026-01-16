@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
@@ -9,11 +10,15 @@ class AppTheme {
   AppTheme._();
 
   static ThemeData get lightTheme {
-    return ThemeData(
+    final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+    );
+    
+    return baseTheme.copyWith(
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
+      textTheme: GoogleFonts.interTextTheme(baseTheme.textTheme),
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
         secondary: AppColors.secondary,
@@ -167,11 +172,15 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    return ThemeData(
+    final baseTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+    );
+    
+    return baseTheme.copyWith(
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: const Color(0xFF0A0A0B),
+      textTheme: GoogleFonts.interTextTheme(baseTheme.textTheme),
       colorScheme: ColorScheme.dark(
         primary: AppColors.primary,
         secondary: AppColors.secondary,

@@ -1,35 +1,73 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:dw_ui/dw_ui.dart';
 
 import 'routing/app_router.dart';
 
+/// Firebase Analytics instance
+final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Catch all errors for Crashlytics
+  runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Hive for local storage
-  await Hive.initFlutter();
+    // Initialize Firebase
+    try {
+      await Firebase.initializeApp();
+      
+      // Configure Crashlytics
+      if (!kDebugMode) {
+        FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+        
+        // Pass all uncaught asynchronous errors to Crashlytics
+        PlatformDispatcher.instance.onError = (error, stack) {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          return true;
+        };
+      }
+      
+      // Log app open event
+      await analytics.logAppOpen();
+    } catch (e) {
+      // Firebase not configured - continue without it
+      debugPrint('Firebase initialization failed: $e');
+    }
 
-  // Set system UI overlay style
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
+    // Initialize Hive for local storage
+    await Hive.initFlutter();
 
-  // Enable edge-to-edge
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Set system UI overlay style
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
 
-  runApp(
-    const ProviderScope(
-      child: DontWasteApp(),
-    ),
-  );
+    // Enable edge-to-edge
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    runApp(
+      const ProviderScope(
+        child: DontWasteApp(),
+      ),
+    );
+  }, (error, stack) {
+    // Log errors to Crashlytics
+    if (!kDebugMode) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    }
+  });
 }
 
 class DontWasteApp extends ConsumerWidget {

@@ -6,6 +6,7 @@ import 'package:dw_domain/dw_domain.dart';
 
 import '../../providers/providers.dart';
 import '../../routing/app_routes.dart';
+import '../../utils/map_utils.dart';
 
 class ListingDetailScreen extends ConsumerStatefulWidget {
   final int listingId;
@@ -296,6 +297,8 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
   }
 
   Widget _buildPickupInfo(SurplusListing listing) {
+    final hasLocation = listing.pickupLocation?.latitude != null && listing.pickupLocation?.longitude != null;
+    
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       padding: const EdgeInsets.all(20),
@@ -312,10 +315,55 @@ class _ListingDetailScreenState extends ConsumerState<ListingDetailScreen> {
         const SizedBox(height: 14),
         _buildPickupRow(Icons.location_on_rounded, 'Address', listing.pickupLocation?.shortDisplay ?? 'Revealed after claim'),
         const SizedBox(height: 16),
-        Container(width: double.infinity, height: 100,
-          decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
-          child: const Center(child: Icon(Icons.map_rounded, size: 40, color: Color(0xFFBDBDBD)))),
+        GestureDetector(
+          onTap: hasLocation ? () => _openDirections(listing) : null,
+          child: Container(
+            width: double.infinity, 
+            height: 100,
+            decoration: BoxDecoration(
+              color: hasLocation ? const Color(0xFF1E3A5F).withOpacity(0.08) : const Color(0xFFF5F5F5), 
+              borderRadius: BorderRadius.circular(12),
+              border: hasLocation ? Border.all(color: const Color(0xFF1E3A5F).withOpacity(0.2)) : null,
+            ),
+            child: hasLocation 
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A5F),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.directions_rounded, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Get Directions',
+                      style: TextStyle(
+                        color: Color(0xFF1E3A5F),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                )
+              : const Center(child: Icon(Icons.map_rounded, size: 40, color: Color(0xFFBDBDBD))),
+          ),
+        ),
       ]),
+    );
+  }
+
+  void _openDirections(SurplusListing listing) {
+    if (listing.pickupLocation?.latitude == null || listing.pickupLocation?.longitude == null) return;
+    
+    MapUtils.openDirections(
+      context: context,
+      destinationLatitude: listing.pickupLocation!.latitude!,
+      destinationLongitude: listing.pickupLocation!.longitude!,
+      destinationTitle: listing.enterprise.name,
     );
   }
 

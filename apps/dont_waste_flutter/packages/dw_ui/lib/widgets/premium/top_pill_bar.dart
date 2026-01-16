@@ -11,6 +11,7 @@ class TopPillBar extends StatelessWidget {
   final IconData? trailingInfoIcon;
   final VoidCallback? onLeadingTap;
   final VoidCallback? onNotificationTap;
+  final VoidCallback? onScannerTap;
   final int notificationCount;
 
   const TopPillBar({
@@ -22,6 +23,7 @@ class TopPillBar extends StatelessWidget {
     this.trailingInfoIcon,
     this.onLeadingTap,
     this.onNotificationTap,
+    this.onScannerTap,
     this.notificationCount = 0,
   });
 
@@ -131,6 +133,28 @@ class TopPillBar extends StatelessWidget {
           ),
 
           const SizedBox(width: PremiumTheme.space12),
+
+          // Scanner button
+          if (onScannerTap != null) ...[
+            GestureDetector(
+              onTap: onScannerTap,
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.accent,
+                  shape: BoxShape.circle,
+                  boxShadow: theme.shadowSm,
+                ),
+                child: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: 22,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(width: PremiumTheme.space8),
+          ],
 
           // Notification button
           GestureDetector(

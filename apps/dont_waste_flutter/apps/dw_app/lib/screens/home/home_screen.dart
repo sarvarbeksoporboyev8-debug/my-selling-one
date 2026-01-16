@@ -19,6 +19,25 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String? _selectedCategory;
 
+  Future<void> _openScanner(BuildContext context) async {
+    final result = await context.push<String>(AppRoutes.scanner);
+    if (result != null && context.mounted) {
+      // Show scanned result - could search for product or show info
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Scanned: $result'),
+          action: SnackBarAction(
+            label: 'Search',
+            onPressed: () {
+              // Could navigate to search with the barcode
+              context.push(AppRoutes.search);
+            },
+          ),
+        ),
+      );
+    }
+  }
+
   final _categories = [
     CategoryChipData(id: 'all', label: 'All', icon: Icons.grid_view_rounded),
     CategoryChipData(id: 'food', label: 'Food', icon: Icons.restaurant_rounded, color: const Color(0xFFF97316)),
@@ -61,6 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   trailingInfo: '24°C',
                   trailingInfoIcon: Icons.wb_sunny_outlined,
                   onLeadingTap: () => context.push(AppRoutes.search),
+                  onScannerTap: () => _openScanner(context),
                   onNotificationTap: () => context.push(AppRoutes.notifications),
                   notificationCount: 3,
                 ),

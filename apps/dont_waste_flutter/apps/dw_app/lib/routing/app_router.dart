@@ -185,6 +185,55 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.filters,
         builder: (context, state) => const FiltersScreen(),
       ),
+
+      // Scanner (returns scanned barcode value)
+      GoRoute(
+        path: AppRoutes.scanner,
+        builder: (context, state) => const BarcodeScannerScreen(),
+      ),
+
+      // PDF Viewer
+      GoRoute(
+        path: AppRoutes.pdfViewer,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return PdfViewerScreen(
+            url: extra?['url'] as String?,
+            filePath: extra?['filePath'] as String?,
+            title: extra?['title'] as String?,
+          );
+        },
+      ),
+
+      // WebView
+      GoRoute(
+        path: AppRoutes.webView,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return WebViewScreen(
+            url: extra?['url'] as String? ?? '',
+            title: extra?['title'] as String?,
+          );
+        },
+      ),
+
+      // Terms of Service
+      GoRoute(
+        path: AppRoutes.termsOfService,
+        builder: (context, state) => const WebViewScreen(
+          url: 'https://dontwaste.app/terms',
+          title: 'Terms of Service',
+        ),
+      ),
+
+      // Privacy Policy
+      GoRoute(
+        path: AppRoutes.privacyPolicy,
+        builder: (context, state) => const WebViewScreen(
+          url: 'https://dontwaste.app/privacy',
+          title: 'Privacy Policy',
+        ),
+      ),
     ],
     errorBuilder: (context, state) => ErrorScreen(error: state.error),
   );

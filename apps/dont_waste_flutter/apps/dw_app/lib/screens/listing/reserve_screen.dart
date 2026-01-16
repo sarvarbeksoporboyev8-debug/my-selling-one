@@ -7,6 +7,7 @@ import 'package:dw_domain/dw_domain.dart';
 
 import '../../providers/providers.dart';
 import '../../routing/app_routes.dart';
+import '../../widgets/promo_code_sheet.dart';
 
 class ReserveScreen extends ConsumerStatefulWidget {
   final int listingId;
@@ -23,6 +24,8 @@ class _ReserveScreenState extends ConsumerState<ReserveScreen> {
   DateTime? _pickupTime;
   bool _isLoading = false;
   int _selectedTier = 0;
+  String? _promoCode;
+  double _promoDiscount = 0;
 
   @override
   void dispose() {
@@ -98,7 +101,9 @@ class _ReserveScreenState extends ConsumerState<ReserveScreen> {
 
   Widget _buildContent(SurplusListing listing) {
     final unitPrice = _getPriceForQuantity(listing, _quantity);
-    final total = unitPrice * _quantity;
+    final subtotal = unitPrice * _quantity;
+    final discount = subtotal * _promoDiscount;
+    final total = subtotal - discount;
 
     return Column(children: [
       Expanded(child: CustomScrollView(slivers: [
@@ -106,13 +111,82 @@ class _ReserveScreenState extends ConsumerState<ReserveScreen> {
         SliverToBoxAdapter(child: _buildProductSummary(listing)),
         SliverToBoxAdapter(child: _buildQuantitySection(listing)),
         SliverToBoxAdapter(child: _buildPricingTiers(listing)),
+        SliverToBoxAdapter(child: _buildPromoCodeSection()),
         SliverToBoxAdapter(child: _buildPickupSection(listing)),
         SliverToBoxAdapter(child: _buildBusinessInfo()),
         SliverToBoxAdapter(child: _buildNoteSection()),
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ])),
-      _buildBottomBar(listing, unitPrice, total),
+      _buildBottomBar(listing, unitPrice, total, discount: discount),
     ]);
+  }
+
+  Widget _buildPromoCodeSection() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.local_offer_rounded, color: Color(0xFF1E3A5F), size: 22),
+          const SizedBox(width: 10),
+          const Text('Promo Code', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1E3A5F))),
+        ]),
+        const SizedBox(height: 16),
+        GestureDetector(
+          onTap: () async {
+            final code = await PromoCodeSheet.show(context, currentCode: _promoCode);
+            if (code != null) {
+              setState(() {
+                if (code.isEmpty) {
+                  _promoCode = null;
+                  _promoDiscount = 0;
+                } else {
+                  _promoCode = code;
+                  // Mock discount - in real app, get from API
+                  _promoDiscount = code == 'SURPLUS20' ? 0.20 : 0.10;
+                }
+              });
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _promoCode != null 
+                  ? const Color(0xFF4CAF50).withOpacity(0.1) 
+                  : const Color(0xFFF5F5F5), 
+              borderRadius: BorderRadius.circular(12),
+              border: _promoCode != null 
+                  ? Border.all(color: const Color(0xFF4CAF50), width: 1.5) 
+                  : null),
+            child: Row(children: [
+              Icon(
+                _promoCode != null ? Icons.check_circle : Icons.confirmation_number_outlined, 
+                size: 20, 
+                color: _promoCode != null ? const Color(0xFF4CAF50) : Colors.grey[400]),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _promoCode != null
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(_promoCode!, 
+                            style: const TextStyle(fontSize: 15, color: Color(0xFF4CAF50), fontWeight: FontWeight.w600, letterSpacing: 1)),
+                          const SizedBox(height: 2),
+                          Text('${(_promoDiscount * 100).toStringAsFixed(0)}% discount applied',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                        ],
+                      )
+                    : Text('Add promo code',
+                        style: TextStyle(fontSize: 15, color: Colors.grey[500])),
+              ),
+              Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+            ]),
+          ),
+        ),
+      ]),
+    );
   }
 
   Widget _buildAppBar(SurplusListing listing) {
@@ -361,7 +435,7 @@ class _ReserveScreenState extends ConsumerState<ReserveScreen> {
     );
   }
 
-  Widget _buildBottomBar(SurplusListing listing, double unitPrice, double total) {
+  Widget _buildBottomBar(SurplusListing listing, double unitPrice, double total, {double discount = 0}) {
     return Container(
       padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).padding.bottom + 16),
       decoration: BoxDecoration(color: Colors.white,
@@ -372,6 +446,10 @@ class _ReserveScreenState extends ConsumerState<ReserveScreen> {
             Text('${_quantity.toStringAsFixed(0)} ${listing.unit}', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
             Text(' × \$${unitPrice.toStringAsFixed(2)}', style: TextStyle(fontSize: 13, color: Colors.grey[500])),
           ]),
+          if (discount > 0) ...[
+            const SizedBox(height: 2),
+            Text('-\$${discount.toStringAsFixed(2)} promo', style: const TextStyle(fontSize: 12, color: Color(0xFF4CAF50), fontWeight: FontWeight.w500)),
+          ],
           const SizedBox(height: 2),
           Text('\$${total.toStringAsFixed(2)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F))),
         ])),
