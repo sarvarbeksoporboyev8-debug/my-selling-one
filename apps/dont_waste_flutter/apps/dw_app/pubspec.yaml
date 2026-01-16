@@ -35,7 +35,8 @@ dependencies:
   hive_flutter: ^1.1.0
 
   # Maps
-  mapbox_maps_flutter: ^2.4.0
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.0
 
   # UI
   cached_network_image: ^3.3.1
