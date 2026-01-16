@@ -25,7 +25,7 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   bool _isMapReady = false;
 
   // San Francisco center
-  static const _defaultCenter = Point(coordinates: Position(-122.4194, 37.7749));
+  static final _defaultCenter = Point(coordinates: Position(-122.4194, 37.7749));
   
   // Mapbox public access token
   static const _mapboxToken = 'pk.eyJ1Ijoic2FydnNvcCIsImEiOiJjbWtnaHkwdGQwOG1tM2ZxbWZuMWQ1Y3ZkIn0.xwHHPjkRV176BR1MElZBcQ';
@@ -59,12 +59,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
   void _onMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
     
-    // Set the access token
-    await MapboxOptions.setAccessToken(_mapboxToken);
-    
-    // Enable 3D terrain and buildings
-    await _setup3DBuildings();
-    
     // Create annotation manager for markers
     _annotationManager = await mapboxMap.annotations.createPointAnnotationManager();
     
@@ -72,33 +66,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
     
     // Add listing markers
     _addListingMarkers();
-  }
-
-  Future<void> _setup3DBuildings() async {
-    if (_mapboxMap == null) return;
-
-    // The dark-v11 style already includes 3D buildings
-    // We just need to ensure the building layer is visible and properly configured
-    
-    try {
-      // Get the style and configure 3D buildings
-      final style = _mapboxMap!.style;
-      
-      // Check if building-extrusion layer exists and configure it
-      // The Mapbox dark style includes this by default
-      
-      // Enable atmosphere for more cinematic look
-      await style.setStyleAtmosphere(Atmosphere(
-        color: const Color(0xFF0D1117).value,
-        highColor: const Color(0xFF1a1f29).value,
-        horizonBlend: 0.1,
-        spaceColor: const Color(0xFF0D1117).value,
-        starIntensity: 0.0,
-      ));
-      
-    } catch (e) {
-      debugPrint('Error setting up 3D buildings: $e');
-    }
   }
 
   void _addListingMarkers() async {

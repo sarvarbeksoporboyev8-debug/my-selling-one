@@ -143,7 +143,8 @@ class _ReservationsScreenState extends ConsumerState<ReservationsScreen> {
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(reservationsProvider);
-        await ref.read(reservationsProvider.future);
+        // Wait for the provider to reload
+        await Future.delayed(const Duration(milliseconds: 500));
       },
       color: DwDarkTheme.accent,
       backgroundColor: DwDarkTheme.surface,
