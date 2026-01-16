@@ -8,6 +8,7 @@ export 'theme/radius.dart';
 export 'theme/typography.dart';
 export 'theme/theme.dart';
 export 'theme/dark_theme.dart';
+export 'theme/premium_theme.dart';
 
 // Theme - legacy naming (for compatibility)
 export 'theme/app_theme.dart';
@@ -28,6 +29,9 @@ export 'widgets/quantity_stepper.dart';
 export 'widgets/skeleton_loader.dart';
 export 'widgets/status_chip.dart';
 export 'widgets/text_field.dart';
+
+// Premium widgets
+export 'widgets/premium/premium_widgets.dart';
 
 // Extensions
 export 'extensions/context_extensions.dart';

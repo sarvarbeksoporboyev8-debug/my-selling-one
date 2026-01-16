@@ -9,53 +9,93 @@ import 'package:dw_ui/dw_ui.dart';
 import '../../providers/providers.dart';
 import '../../routing/app_routes.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String? _selectedCategory;
+
+  final _categories = [
+    CategoryChipData(id: 'all', label: 'All', icon: Icons.grid_view_rounded),
+    CategoryChipData(id: 'food', label: 'Food', icon: Icons.restaurant_rounded, color: const Color(0xFFF97316)),
+    CategoryChipData(id: 'retail', label: 'Retail', icon: Icons.store_rounded, color: const Color(0xFF8B5CF6)),
+    CategoryChipData(id: 'office', label: 'Office', icon: Icons.business_rounded, color: const Color(0xFF3B82F6)),
+    CategoryChipData(id: 'build', label: 'Build', icon: Icons.construction_rounded, color: const Color(0xFF22C55E)),
+    CategoryChipData(id: 'hotel', label: 'Hotel', icon: Icons.hotel_rounded, color: const Color(0xFFEC4899)),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.premium;
     final user = ref.watch(currentUserProvider);
     final listingsAsync = ref.watch(listingsProvider);
-    final watchlistCount = ref.watch(watchlistCountProvider);
-    final reservations = ref.watch(reservationsProvider);
-
-    final reservationsCount = reservations.maybeWhen(
-      data: (items) => items.where((r) => r.isActive).length,
-      orElse: () => 0,
-    );
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: theme.isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
-        backgroundColor: DwDarkTheme.background,
+        backgroundColor: theme.background,
         body: RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(listingsProvider);
             await Future.delayed(const Duration(milliseconds: 500));
           },
-          color: DwDarkTheme.accent,
-          backgroundColor: DwDarkTheme.surface,
+          color: theme.accent,
+          backgroundColor: theme.surface,
           child: CustomScrollView(
             slivers: [
-              // Header
+              // Top safe area
               SliverToBoxAdapter(
-                child: _buildHeader(context, user),
+                child: SizedBox(height: MediaQuery.of(context).padding.top + PremiumTheme.space8),
               ),
 
-              // Quick stats
+              // Top pill bar
               SliverToBoxAdapter(
-                child: _buildQuickStats(context, watchlistCount, reservationsCount),
+                child: TopPillBar(
+                  title: user?.name ?? 'Welcome',
+                  subtitle: 'Find surplus deals nearby',
+                  leadingIcon: Icons.location_on_rounded,
+                  trailingInfo: '24°C',
+                  trailingInfoIcon: Icons.wb_sunny_outlined,
+                  onLeadingTap: () => context.push(AppRoutes.search),
+                  onNotificationTap: () => context.push(AppRoutes.notifications),
+                  notificationCount: 3,
+                ),
               ),
 
-              // Featured section
+              const SliverToBoxAdapter(child: SizedBox(height: PremiumTheme.space20)),
+
+              // Categories
               SliverToBoxAdapter(
-                child: _buildSectionHeader('Featured Deals', () => context.go(AppRoutes.discover)),
+                child: CategoryChipsRow(
+                  categories: _categories,
+                  selectedId: _selectedCategory,
+                  onSelected: (id) => setState(() {
+                    _selectedCategory = id == 'all' ? null : id;
+                  }),
+                ),
               ),
 
-              // Featured listings
+              const SliverToBoxAdapter(child: SizedBox(height: PremiumTheme.space24)),
+
+              // Featured section header
+              SliverToBoxAdapter(
+                child: _SectionHeader(
+                  title: 'Featured Deals',
+                  actionLabel: 'See all',
+                  onAction: () => context.go(AppRoutes.discover),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: PremiumTheme.space12)),
+
+              // Featured carousel
               listingsAsync.when(
                 data: (state) => SliverToBoxAdapter(
-                  child: _buildFeaturedListings(context, state.listings),
+                  child: _buildFeaturedCarousel(state.listings),
                 ),
                 loading: () => const SliverToBoxAdapter(
                   child: _FeaturedLoadingState(),
@@ -65,23 +105,39 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Categories section
+              const SliverToBoxAdapter(child: SizedBox(height: PremiumTheme.space28)),
+
+              // Nearby section header
               SliverToBoxAdapter(
-                child: _buildSectionHeader('Browse Categories', null),
+                child: _SectionHeader(
+                  title: 'Nearby',
+                  actionLabel: 'View map',
+                  onAction: () => context.go(AppRoutes.map),
+                ),
               ),
 
-              SliverToBoxAdapter(
-                child: _buildCategories(context),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: PremiumTheme.space12)),
 
-              // Nearby section
-              SliverToBoxAdapter(
-                child: _buildSectionHeader('Nearby', () => context.go(AppRoutes.map)),
-              ),
-
+              // Nearby listings
               listingsAsync.when(
-                data: (state) => SliverToBoxAdapter(
-                  child: _buildNearbyListings(context, state.listings),
+                data: (state) => SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: PremiumTheme.space16),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final nearby = state.listings.where((l) => l.distanceKm != null).take(5).toList();
+                        if (index >= nearby.length) return null;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: PremiumTheme.space12),
+                          child: _NearbyCard(
+                            listing: nearby[index],
+                            onTap: () => context.push(AppRoutes.listingDetailPath(nearby[index].id)),
+                          ),
+                        );
+                      },
+                      childCount: 5,
+                    ),
+                  ),
                 ),
                 loading: () => const SliverToBoxAdapter(
                   child: _NearbyLoadingState(),
@@ -93,7 +149,7 @@ class HomeScreen extends ConsumerWidget {
 
               // Bottom padding
               const SliverToBoxAdapter(
-                child: SizedBox(height: DwDarkTheme.spacingXl),
+                child: SizedBox(height: PremiumTheme.space32),
               ),
             ],
           ),
@@ -102,406 +158,58 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, user) {
-    final greeting = _getGreeting();
-    final name = user?.name.split(' ').first ?? 'there';
+  Widget _buildFeaturedCarousel(List<SurplusListing> listings) {
+    final featured = listings.take(5).toList();
+    final items = featured.map((l) => FeatureCardData(
+      id: l.id.toString(),
+      imageUrl: l.imageUrls.isNotEmpty ? l.imageUrls.first : l.photoUrls?.firstOrNull,
+      badge: l.hasDiscount ? '-${l.discountPercentage!.toStringAsFixed(0)}% OFF' : null,
+      badgeColor: const Color(0xFF22C55E),
+      title: l.safeTitle,
+      subtitle: l.enterprise.name,
+    )).toList();
 
-    return Container(
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + DwDarkTheme.spacingMd,
-        left: DwDarkTheme.spacingMd,
-        right: DwDarkTheme.spacingMd,
-        bottom: DwDarkTheme.spacingMd,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$greeting,',
-                  style: DwDarkTheme.bodyMedium.copyWith(
-                    color: DwDarkTheme.textTertiary,
-                  ),
-                ),
-                Text(
-                  name,
-                  style: DwDarkTheme.headlineMedium,
-                ),
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: () => context.push(AppRoutes.notifications),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: DwDarkTheme.surfaceHighlight,
-                borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
-                border: Border.all(color: DwDarkTheme.cardBorder, width: 1),
-              ),
-              child: const Icon(
-                Icons.notifications_outlined,
-                color: DwDarkTheme.textSecondary,
-                size: 22,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return FeatureCardCarousel(
+      items: items,
+      height: 300,
+      onItemTap: (item) {
+        final listing = featured.firstWhere((l) => l.id.toString() == item.id);
+        context.push(AppRoutes.listingDetailPath(listing.id));
+      },
     );
   }
+}
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
-  Widget _buildQuickStats(BuildContext context, int watchlistCount, int reservationsCount) {
+  const _SectionHeader({
+    required this.title,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.premium;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DwDarkTheme.spacingMd),
-      child: Row(
-        children: [
-          Expanded(
-            child: _StatCard(
-              icon: Icons.bookmark_outline,
-              label: 'Watchlist',
-              value: watchlistCount.toString(),
-              color: DwDarkTheme.accent,
-              onTap: () => context.go(AppRoutes.watchlist),
-            ),
-          ),
-          const SizedBox(width: DwDarkTheme.spacingSm),
-          Expanded(
-            child: _StatCard(
-              icon: Icons.shopping_bag_outlined,
-              label: 'Active Orders',
-              value: reservationsCount.toString(),
-              color: DwDarkTheme.accentGreen,
-              onTap: () => context.go(AppRoutes.reservations),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title, VoidCallback? onSeeAll) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        DwDarkTheme.spacingMd,
-        DwDarkTheme.spacingLg,
-        DwDarkTheme.spacingMd,
-        DwDarkTheme.spacingSm,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: PremiumTheme.space16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: DwDarkTheme.titleMedium),
-          if (onSeeAll != null)
+          Text(title, style: theme.headlineMedium),
+          if (actionLabel != null)
             GestureDetector(
-              onTap: onSeeAll,
+              onTap: onAction,
               child: Text(
-                'See all',
-                style: DwDarkTheme.labelMedium.copyWith(
-                  color: DwDarkTheme.accent,
-                ),
+                actionLabel!,
+                style: theme.labelLarge.copyWith(color: theme.accent),
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFeaturedListings(BuildContext context, List<SurplusListing> listings) {
-    final featured = listings.take(5).toList();
-
-    return SizedBox(
-      height: 220,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: DwDarkTheme.spacingMd),
-        itemCount: featured.length,
-        separatorBuilder: (_, __) => const SizedBox(width: DwDarkTheme.spacingSm),
-        itemBuilder: (context, index) {
-          return _FeaturedCard(
-            listing: featured[index],
-            onTap: () => context.push(AppRoutes.listingDetailPath(featured[index].id)),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCategories(BuildContext context) {
-    final categories = [
-      ('Food & Beverage', Icons.restaurant, DwDarkTheme.accentOrange),
-      ('Retail Overstock', Icons.store, DwDarkTheme.accentPurple),
-      ('Office Supplies', Icons.business, DwDarkTheme.accent),
-      ('Construction', Icons.construction, DwDarkTheme.accentGreen),
-    ];
-
-    return SizedBox(
-      height: 100,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: DwDarkTheme.spacingMd),
-        itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: DwDarkTheme.spacingSm),
-        itemBuilder: (context, index) {
-          final (label, icon, color) = categories[index];
-          return _CategoryCard(
-            label: label,
-            icon: icon,
-            color: color,
-            onTap: () => context.go(AppRoutes.discover),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildNearbyListings(BuildContext context, List<SurplusListing> listings) {
-    final nearby = listings.where((l) => l.distanceKm != null).take(3).toList();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DwDarkTheme.spacingMd),
-      child: Column(
-        children: nearby.map((listing) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: DwDarkTheme.spacingSm),
-            child: _NearbyCard(
-              listing: listing,
-              onTap: () => context.push(AppRoutes.listingDetailPath(listing.id)),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
-        decoration: BoxDecoration(
-          color: DwDarkTheme.cardBackground,
-          borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
-          border: Border.all(color: DwDarkTheme.cardBorder, width: 1),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
-              ),
-              child: Icon(icon, size: 20, color: color),
-            ),
-            const SizedBox(width: DwDarkTheme.spacingSm),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: DwDarkTheme.titleMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  label,
-                  style: DwDarkTheme.labelSmall.copyWith(
-                    color: DwDarkTheme.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FeaturedCard extends StatelessWidget {
-  final SurplusListing listing;
-  final VoidCallback onTap;
-
-  const _FeaturedCard({required this.listing, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final imageUrl = listing.imageUrls?.isNotEmpty == true
-        ? listing.imageUrls!.first
-        : listing.photoUrls?.isNotEmpty == true
-            ? listing.photoUrls!.first
-            : null;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 160,
-        decoration: BoxDecoration(
-          color: DwDarkTheme.cardBackground,
-          borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
-          border: Border.all(color: DwDarkTheme.cardBorder, width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            Expanded(
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(DwDarkTheme.radiusMd - 1),
-                    ),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: imageUrl != null
-                          ? CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => _buildPlaceholder(),
-                              errorWidget: (_, __, ___) => _buildPlaceholder(),
-                            )
-                          : _buildPlaceholder(),
-                    ),
-                  ),
-                  if (listing.hasDiscount)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: DwDarkTheme.accentGreen,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '-${listing.discountPercentage!.toStringAsFixed(0)}%',
-                          style: DwDarkTheme.labelSmall.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            // Info
-            Padding(
-              padding: const EdgeInsets.all(DwDarkTheme.spacingSm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    listing.safeTitle,
-                    style: DwDarkTheme.titleSmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '\$${listing.currentPrice.toStringAsFixed(2)}',
-                    style: DwDarkTheme.titleSmall.copyWith(
-                      color: DwDarkTheme.accentGreen,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      color: DwDarkTheme.surfaceHighlight,
-      child: const Center(
-        child: Icon(Icons.inventory_2_outlined, color: DwDarkTheme.textMuted, size: 32),
-      ),
-    );
-  }
-}
-
-class _CategoryCard extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _CategoryCard({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 100,
-        padding: const EdgeInsets.all(DwDarkTheme.spacingSm),
-        decoration: BoxDecoration(
-          color: DwDarkTheme.cardBackground,
-          borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
-          border: Border.all(color: DwDarkTheme.cardBorder, width: 1),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
-              ),
-              child: Icon(icon, size: 20, color: color),
-            ),
-            const SizedBox(height: DwDarkTheme.spacingSm),
-            Text(
-              label,
-              style: DwDarkTheme.labelSmall.copyWith(color: DwDarkTheme.textSecondary),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -515,44 +223,44 @@ class _NearbyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = listing.imageUrls?.isNotEmpty == true
-        ? listing.imageUrls!.first
-        : listing.photoUrls?.isNotEmpty == true
-            ? listing.photoUrls!.first
-            : null;
+    final theme = context.premium;
+    final imageUrl = listing.imageUrls.isNotEmpty 
+        ? listing.imageUrls.first 
+        : listing.photoUrls?.firstOrNull;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(DwDarkTheme.spacingSm),
+        padding: const EdgeInsets.all(PremiumTheme.space12),
         decoration: BoxDecoration(
-          color: DwDarkTheme.cardBackground,
-          borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
-          border: Border.all(color: DwDarkTheme.cardBorder, width: 1),
+          color: theme.cardBackground,
+          borderRadius: BorderRadius.circular(PremiumTheme.radiusLg),
+          boxShadow: theme.shadowSm,
+          border: Border.all(color: theme.borderSubtle, width: 1),
         ),
         child: Row(
           children: [
             // Image
             Container(
-              width: 60,
-              height: 60,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: DwDarkTheme.surfaceHighlight,
-                borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+                color: theme.surfaceSecondary,
+                borderRadius: BorderRadius.circular(PremiumTheme.radiusMd),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+                borderRadius: BorderRadius.circular(PremiumTheme.radiusMd),
                 child: imageUrl != null
                     ? CachedNetworkImage(
                         imageUrl: imageUrl,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => _buildPlaceholder(),
-                        errorWidget: (_, __, ___) => _buildPlaceholder(),
+                        placeholder: (_, __) => _buildPlaceholder(theme),
+                        errorWidget: (_, __, ___) => _buildPlaceholder(theme),
                       )
-                    : _buildPlaceholder(),
+                    : _buildPlaceholder(theme),
               ),
             ),
-            const SizedBox(width: DwDarkTheme.spacingSm),
+            const SizedBox(width: PremiumTheme.space12),
 
             // Info
             Expanded(
@@ -561,48 +269,61 @@ class _NearbyCard extends StatelessWidget {
                 children: [
                   Text(
                     listing.safeTitle,
-                    style: DwDarkTheme.titleSmall,
+                    style: theme.titleMedium,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: PremiumTheme.space2),
                   Text(
-                    listing.enterprise?.name ?? 'Unknown',
-                    style: DwDarkTheme.labelSmall.copyWith(color: DwDarkTheme.textMuted),
+                    listing.enterprise.name,
+                    style: theme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: PremiumTheme.space6),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: PremiumTheme.space8,
+                          vertical: PremiumTheme.space4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.successLight,
+                          borderRadius: BorderRadius.circular(PremiumTheme.radiusSm),
+                        ),
+                        child: Text(
+                          '\$${listing.currentPrice.toStringAsFixed(2)}',
+                          style: theme.labelSmall.copyWith(
+                            color: theme.success,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (listing.distanceKm != null) ...[
+                        const SizedBox(width: PremiumTheme.space8),
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 14,
+                          color: theme.textTertiary,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${listing.distanceKm!.toStringAsFixed(1)} km',
+                          style: theme.caption,
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
             ),
 
-            // Distance & price
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '\$${listing.currentPrice.toStringAsFixed(2)}',
-                  style: DwDarkTheme.titleSmall.copyWith(
-                    color: DwDarkTheme.accentGreen,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (listing.distanceKm != null)
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        size: 12,
-                        color: DwDarkTheme.textMuted,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${listing.distanceKm!.toStringAsFixed(1)} km',
-                        style: DwDarkTheme.labelSmall.copyWith(
-                          color: DwDarkTheme.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+            // Arrow
+            Icon(
+              Icons.chevron_right_rounded,
+              color: theme.textMuted,
+              size: 24,
             ),
           ],
         ),
@@ -610,11 +331,15 @@ class _NearbyCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(PremiumTheme theme) {
     return Container(
-      color: DwDarkTheme.surfaceHighlight,
-      child: const Center(
-        child: Icon(Icons.inventory_2_outlined, color: DwDarkTheme.textMuted, size: 24),
+      color: theme.surfaceSecondary,
+      child: Center(
+        child: Icon(
+          Icons.inventory_2_outlined,
+          color: theme.textMuted,
+          size: 28,
+        ),
       ),
     );
   }
@@ -625,21 +350,13 @@ class _FeaturedLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 220,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: DwDarkTheme.spacingMd),
-        itemCount: 3,
-        separatorBuilder: (_, __) => const SizedBox(width: DwDarkTheme.spacingSm),
-        itemBuilder: (_, __) => Container(
-          width: 160,
-          decoration: BoxDecoration(
-            color: DwDarkTheme.cardBackground,
-            borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
-            border: Border.all(color: DwDarkTheme.cardBorder, width: 1),
-          ),
-        ),
+    final theme = context.premium;
+    return Container(
+      height: 300,
+      margin: const EdgeInsets.symmetric(horizontal: PremiumTheme.space16),
+      decoration: BoxDecoration(
+        color: theme.surfaceSecondary,
+        borderRadius: BorderRadius.circular(PremiumTheme.radiusXl),
       ),
     );
   }
@@ -650,19 +367,19 @@ class _NearbyLoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.premium;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DwDarkTheme.spacingMd),
+      padding: const EdgeInsets.symmetric(horizontal: PremiumTheme.space16),
       child: Column(
         children: List.generate(
           3,
           (_) => Padding(
-            padding: const EdgeInsets.only(bottom: DwDarkTheme.spacingSm),
+            padding: const EdgeInsets.only(bottom: PremiumTheme.space12),
             child: Container(
-              height: 76,
+              height: 96,
               decoration: BoxDecoration(
-                color: DwDarkTheme.cardBackground,
-                borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
-                border: Border.all(color: DwDarkTheme.cardBorder, width: 1),
+                color: theme.surfaceSecondary,
+                borderRadius: BorderRadius.circular(PremiumTheme.radiusLg),
               ),
             ),
           ),
