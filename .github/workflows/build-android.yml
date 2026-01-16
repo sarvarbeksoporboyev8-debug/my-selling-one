@@ -40,7 +40,7 @@ jobs:
         run: eas init --id ${{ secrets.EAS_PROJECT_ID }} --non-interactive
 
       - name: Build APK
-        run: eas build --platform android --profile preview --non-interactive
+        run: eas build --platform android --profile preview --non-interactive --no-wait
 
       - name: Get build URL
         run: |
