@@ -189,7 +189,6 @@ class _MapScreenState extends ConsumerState<MapScreen> with TickerProviderStateM
               Positioned.fill(
                 child: MapWidget(
                   key: const ValueKey('mapWidget'),
-                  resourceOptions: ResourceOptions(accessToken: _mapboxToken),
                   cameraOptions: CameraOptions(
                     center: _defaultCenter,
                     zoom: _defaultZoom,
