@@ -1,92 +1,421 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dw_ui/dw_ui.dart';
-import 'package:dw_domain/dw_domain.dart';
 
 import '../../providers/providers.dart';
 import '../../routing/app_routes.dart';
+import 'widgets/widgets.dart';
 
-/// Profile screen
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
+    final watchlistCount = ref.watch(watchlistCountProvider);
+    final reservations = ref.watch(reservationsProvider);
+    
+    final reservationsCount = reservations.maybeWhen(
+      data: (items) => items.length,
+      orElse: () => 0,
+    );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push(AppRoutes.settings),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(DwSpacing.md),
-        child: Column(
-          children: [
-            // Profile header
-            _ProfileHeader(user: user),
-            const SizedBox(height: DwSpacing.xl),
+    // Check if profile is incomplete
+    final isProfileIncomplete = user?.name.isEmpty == true || 
+        user?.name == 'Demo User';
 
-            // Stats
-            _StatsRow(),
-            const SizedBox(height: DwSpacing.xl),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: DwDarkTheme.background,
+        body: CustomScrollView(
+          slivers: [
+            // Custom app bar
+            SliverAppBar(
+              backgroundColor: DwDarkTheme.background,
+              surfaceTintColor: Colors.transparent,
+              pinned: true,
+              expandedHeight: 60,
+              title: Text(
+                'Profile',
+                style: DwDarkTheme.headlineSmall,
+              ),
+              actions: [
+                IconButton(
+                  icon: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: DwDarkTheme.surfaceHighlight,
+                      borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+                    ),
+                    child: const Icon(
+                      Icons.settings_outlined,
+                      size: 20,
+                      color: DwDarkTheme.textSecondary,
+                    ),
+                  ),
+                  onPressed: () => context.push(AppRoutes.settings),
+                ),
+                const SizedBox(width: DwDarkTheme.spacingSm),
+              ],
+            ),
 
-            // Menu items
-            _MenuItem(
-              icon: Icons.store_outlined,
-              title: 'My Listings',
-              subtitle: 'Manage your surplus food listings',
-              onTap: () => context.push(AppRoutes.myListings),
-            ),
-            _MenuItem(
-              icon: Icons.add_circle_outline,
-              title: 'Create Listing',
-              subtitle: 'List surplus food for sale',
-              onTap: () => context.push(AppRoutes.createListing),
-            ),
-            _MenuItem(
-              icon: Icons.notifications_outlined,
-              title: 'Notifications',
-              subtitle: 'Manage notification preferences',
-              onTap: () => context.push(AppRoutes.notifications),
-            ),
-            _MenuItem(
-              icon: Icons.help_outline,
-              title: 'Help & Support',
-              subtitle: 'FAQs and contact support',
-              onTap: () {
-                // TODO: Open help
-              },
-            ),
-            _MenuItem(
-              icon: Icons.info_outline,
-              title: 'About',
-              subtitle: 'App version and legal info',
-              onTap: () {
-                // TODO: Open about
-              },
-            ),
-            const SizedBox(height: DwSpacing.lg),
+            // Content
+            SliverPadding(
+              padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  // Profile header
+                  ProfileHeader(
+                    user: user,
+                    onEditProfile: () => context.push(AppRoutes.editProfile),
+                    isVerified: true,
+                    accountType: 'Business Account',
+                  ),
+                  const SizedBox(height: DwDarkTheme.spacingMd),
 
-            // Logout button
-            DwOutlinedButton(
-              onPressed: () => _handleLogout(context, ref),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.logout, color: DwColors.error),
-                  const SizedBox(width: DwSpacing.sm),
-                  Text('Sign Out', style: TextStyle(color: DwColors.error)),
-                ],
+                  // Profile completion card (if incomplete)
+                  if (isProfileIncomplete) ...[
+                    ProfileCompletionCard(
+                      onComplete: () => context.push(AppRoutes.editProfile),
+                      completionPercent: 60,
+                    ),
+                    const SizedBox(height: DwDarkTheme.spacingMd),
+                  ],
+
+                  // Stats card
+                  StatsCard(
+                    stats: [
+                      StatItem(
+                        id: 'watchlist',
+                        value: watchlistCount.toString(),
+                        label: 'Watchlist',
+                        icon: Icons.bookmark_outline,
+                        color: DwDarkTheme.accent,
+                      ),
+                      StatItem(
+                        id: 'reservations',
+                        value: reservationsCount.toString(),
+                        label: 'Reservations',
+                        icon: Icons.shopping_bag_outlined,
+                        color: DwDarkTheme.accentGreen,
+                      ),
+                      StatItem(
+                        id: 'listings',
+                        value: '3',
+                        label: 'Listings',
+                        icon: Icons.store_outlined,
+                        color: DwDarkTheme.accentPurple,
+                      ),
+                    ],
+                    onStatTap: (stat) => _handleStatTap(context, stat),
+                  ),
+                  const SizedBox(height: DwDarkTheme.spacingLg),
+
+                  // Quick actions
+                  QuickActionGrid(
+                    actions: [
+                      QuickAction(
+                        title: 'My Reservations',
+                        subtitle: '$reservationsCount active',
+                        icon: Icons.receipt_long_outlined,
+                        color: DwDarkTheme.accentGreen,
+                        onTap: () => context.go(AppRoutes.reservations),
+                      ),
+                      QuickAction(
+                        title: 'My Listings',
+                        subtitle: 'Manage inventory',
+                        icon: Icons.inventory_2_outlined,
+                        color: DwDarkTheme.accentPurple,
+                        onTap: () => context.push(AppRoutes.myListings),
+                      ),
+                      QuickAction(
+                        title: 'Create Listing',
+                        subtitle: 'Sell surplus',
+                        icon: Icons.add_circle_outline,
+                        color: DwDarkTheme.accent,
+                        onTap: () => context.push(AppRoutes.createListing),
+                      ),
+                      QuickAction(
+                        title: 'Saved Items',
+                        subtitle: '$watchlistCount saved',
+                        icon: Icons.bookmark_border,
+                        color: DwDarkTheme.accentOrange,
+                        onTap: () => context.go(AppRoutes.watchlist),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: DwDarkTheme.spacingLg),
+
+                  // Account settings
+                  SettingsSectionCard(
+                    title: 'Account',
+                    items: [
+                      SettingsItem(
+                        icon: Icons.person_outline,
+                        title: 'Edit Profile',
+                        subtitle: 'Name, photo, contact info',
+                        iconColor: DwDarkTheme.accent,
+                        onTap: () => context.push(AppRoutes.editProfile),
+                      ),
+                      SettingsItem(
+                        icon: Icons.business_outlined,
+                        title: 'Business Details',
+                        subtitle: 'Company, address, tax ID',
+                        iconColor: DwDarkTheme.accentPurple,
+                        onTap: () {
+                          // TODO: Navigate to business details
+                          _showComingSoon(context);
+                        },
+                      ),
+                      SettingsItem(
+                        icon: Icons.language_outlined,
+                        title: 'Language',
+                        subtitle: 'English',
+                        iconColor: DwDarkTheme.accentGreen,
+                        trailing: Text(
+                          'EN',
+                          style: DwDarkTheme.labelMedium.copyWith(
+                            color: DwDarkTheme.textMuted,
+                          ),
+                        ),
+                        onTap: () {
+                          // TODO: Language picker
+                          _showComingSoon(context);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: DwDarkTheme.spacingMd),
+
+                  // Notifications
+                  SettingsSectionCard(
+                    title: 'Notifications',
+                    items: [
+                      SettingsItem(
+                        icon: Icons.notifications_outlined,
+                        title: 'Push Notifications',
+                        subtitle: 'Manage alerts and updates',
+                        iconColor: DwDarkTheme.accentOrange,
+                        onTap: () => context.push(AppRoutes.notifications),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: DwDarkTheme.spacingMd),
+
+                  // Support
+                  SettingsSectionCard(
+                    title: 'Support',
+                    items: [
+                      SettingsItem(
+                        icon: Icons.help_outline,
+                        title: 'Help Center',
+                        subtitle: 'FAQs and guides',
+                        iconColor: DwDarkTheme.accent,
+                        onTap: () {
+                          // TODO: Open help center
+                          _showComingSoon(context);
+                        },
+                      ),
+                      SettingsItem(
+                        icon: Icons.bug_report_outlined,
+                        title: 'Report a Problem',
+                        subtitle: 'Send feedback or report issues',
+                        iconColor: DwDarkTheme.error,
+                        onTap: () {
+                          // TODO: Open report form
+                          _showComingSoon(context);
+                        },
+                      ),
+                      SettingsItem(
+                        icon: Icons.description_outlined,
+                        title: 'Terms & Privacy',
+                        subtitle: 'Legal information',
+                        iconColor: DwDarkTheme.textTertiary,
+                        onTap: () {
+                          // TODO: Open terms
+                          _showComingSoon(context);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: DwDarkTheme.spacingMd),
+
+                  // App info
+                  SettingsSectionCard(
+                    title: 'App',
+                    items: [
+                      SettingsItem(
+                        icon: Icons.dark_mode_outlined,
+                        title: 'Theme',
+                        subtitle: 'Dark mode enabled',
+                        iconColor: DwDarkTheme.accentPink,
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: DwDarkTheme.spacingSm,
+                            vertical: DwDarkTheme.spacingXs,
+                          ),
+                          decoration: BoxDecoration(
+                            color: DwDarkTheme.accentPink.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+                          ),
+                          child: Text(
+                            'Dark',
+                            style: DwDarkTheme.labelSmall.copyWith(
+                              color: DwDarkTheme.accentPink,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        showChevron: false,
+                        onTap: () {
+                          // Theme is fixed to dark for now
+                        },
+                      ),
+                      SettingsItem(
+                        icon: Icons.info_outline,
+                        title: 'About',
+                        subtitle: 'Version 1.0.0',
+                        iconColor: DwDarkTheme.textTertiary,
+                        onTap: () {
+                          _showAboutDialog(context);
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: DwDarkTheme.spacingLg),
+
+                  // Sign out button
+                  _buildSignOutButton(context, ref),
+                  const SizedBox(height: DwDarkTheme.spacingXl),
+
+                  // Footer
+                  Center(
+                    child: Text(
+                      "Don't Waste • Reduce Food Waste",
+                      style: DwDarkTheme.labelSmall.copyWith(
+                        color: DwDarkTheme.textMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: DwDarkTheme.spacingMd),
+                ]),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _handleStatTap(BuildContext context, StatItem stat) {
+    switch (stat.id) {
+      case 'watchlist':
+        context.go(AppRoutes.watchlist);
+        break;
+      case 'reservations':
+        context.go(AppRoutes.reservations);
+        break;
+      case 'listings':
+        context.push(AppRoutes.myListings);
+        break;
+    }
+  }
+
+  void _showComingSoon(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Coming soon'),
+        backgroundColor: DwDarkTheme.surfaceElevated,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+        ),
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: DwDarkTheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DwDarkTheme.radiusLg),
+        ),
+        title: Text(
+          "Don't Waste",
+          style: DwDarkTheme.headlineSmall,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Version 1.0.0',
+              style: DwDarkTheme.bodyMedium,
+            ),
+            const SizedBox(height: DwDarkTheme.spacingSm),
+            Text(
+              'A B2B marketplace for surplus inventory. Reduce waste, save money, help the planet.',
+              style: DwDarkTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Close',
+              style: DwDarkTheme.labelLarge.copyWith(
+                color: DwDarkTheme.accent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignOutButton(BuildContext context, WidgetRef ref) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _handleLogout(context, ref),
+        borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            vertical: DwDarkTheme.spacingMd,
+          ),
+          decoration: BoxDecoration(
+            color: DwDarkTheme.error.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
+            border: Border.all(
+              color: DwDarkTheme.error.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.logout,
+                size: 20,
+                color: DwDarkTheme.error,
+              ),
+              const SizedBox(width: DwDarkTheme.spacingSm),
+              Text(
+                'Sign Out',
+                style: DwDarkTheme.titleSmall.copyWith(
+                  color: DwDarkTheme.error,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -96,16 +425,36 @@ class ProfileScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
+        backgroundColor: DwDarkTheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DwDarkTheme.radiusLg),
+        ),
+        title: Text(
+          'Sign Out',
+          style: DwDarkTheme.headlineSmall,
+        ),
+        content: Text(
+          'Are you sure you want to sign out?',
+          style: DwDarkTheme.bodyMedium,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: DwDarkTheme.labelLarge.copyWith(
+                color: DwDarkTheme.textSecondary,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Sign Out', style: TextStyle(color: DwColors.error)),
+            child: Text(
+              'Sign Out',
+              style: DwDarkTheme.labelLarge.copyWith(
+                color: DwDarkTheme.error,
+              ),
+            ),
           ),
         ],
       ),
@@ -114,139 +463,5 @@ class ProfileScreen extends ConsumerWidget {
     if (confirmed == true) {
       await ref.read(authStateProvider.notifier).logout();
     }
-  }
-}
-
-class _ProfileHeader extends StatelessWidget {
-  final User? user;
-
-  const _ProfileHeader({this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Avatar
-        CircleAvatar(
-          radius: 50,
-          backgroundColor: DwColors.primaryLight,
-          backgroundImage: user?.avatarUrl != null
-              ? NetworkImage(user!.avatarUrl!)
-              : null,
-          child: user?.avatarUrl == null
-              ? Text(
-                  user?.name.substring(0, 1).toUpperCase() ?? '?',
-                  style: DwTextStyles.headlineLarge.copyWith(
-                    color: DwColors.primary,
-                  ),
-                )
-              : null,
-        ),
-        const SizedBox(height: DwSpacing.md),
-
-        // Name
-        Text(
-          user?.name ?? 'Guest',
-          style: DwTextStyles.headlineSmall,
-        ),
-        const SizedBox(height: DwSpacing.xs),
-
-        // Email
-        Text(
-          user?.email ?? '',
-          style: DwTextStyles.bodyMedium.copyWith(
-            color: DwColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: DwSpacing.md),
-
-        // Edit profile button
-        TextButton.icon(
-          onPressed: () => context.push(AppRoutes.editProfile),
-          icon: const Icon(Icons.edit, size: 16),
-          label: const Text('Edit Profile'),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatsRow extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // These would come from actual user stats
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _StatItem(value: '12', label: 'Saved'),
-        _StatItem(value: '8', label: 'Purchased'),
-        _StatItem(value: '24kg', label: 'Food Saved'),
-      ],
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _StatItem({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: DwTextStyles.headlineSmall.copyWith(
-            color: DwColors.primary,
-          ),
-        ),
-        Text(
-          label,
-          style: DwTextStyles.bodySmall.copyWith(
-            color: DwColors.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MenuItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _MenuItem({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: DwColors.primaryLight,
-          borderRadius: BorderRadius.circular(DwRadius.sm),
-        ),
-        child: Icon(icon, color: DwColors.primary),
-      ),
-      title: Text(title, style: DwTextStyles.titleSmall),
-      subtitle: Text(
-        subtitle,
-        style: DwTextStyles.bodySmall.copyWith(
-          color: DwColors.textSecondary,
-        ),
-      ),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    );
   }
 }

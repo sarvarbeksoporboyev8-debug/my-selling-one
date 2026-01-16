@@ -7,6 +7,7 @@ export 'theme/spacing.dart';
 export 'theme/radius.dart';
 export 'theme/typography.dart';
 export 'theme/theme.dart';
+export 'theme/dark_theme.dart';
 
 // Theme - legacy naming (for compatibility)
 export 'theme/app_theme.dart';

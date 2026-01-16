@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:dw_ui/dw_ui.dart';
 
-/// Settings screen
+import 'widgets/widgets.dart';
+
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -11,158 +14,400 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _darkMode = false;
   bool _pushNotifications = true;
   bool _emailNotifications = true;
   String _distanceUnit = 'km';
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: DwDarkTheme.background,
+        appBar: AppBar(
+          backgroundColor: DwDarkTheme.background,
+          surfaceTintColor: Colors.transparent,
+          leading: IconButton(
+            icon: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: DwDarkTheme.surfaceHighlight,
+                borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                size: 20,
+                color: DwDarkTheme.textSecondary,
+              ),
+            ),
+            onPressed: () => context.pop(),
+          ),
+          title: Text(
+            'Settings',
+            style: DwDarkTheme.headlineSmall,
+          ),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
+          children: [
+            // Notifications section
+            SettingsSectionCard(
+              title: 'Notifications',
+              items: [
+                SettingsItem(
+                  icon: Icons.notifications_active_outlined,
+                  title: 'Push Notifications',
+                  subtitle: 'Receive push notifications',
+                  iconColor: DwDarkTheme.accentOrange,
+                  showChevron: false,
+                  trailing: _buildSwitch(
+                    value: _pushNotifications,
+                    onChanged: (value) {
+                      setState(() => _pushNotifications = value);
+                    },
+                  ),
+                ),
+                SettingsItem(
+                  icon: Icons.email_outlined,
+                  title: 'Email Notifications',
+                  subtitle: 'Receive email updates',
+                  iconColor: DwDarkTheme.accent,
+                  showChevron: false,
+                  trailing: _buildSwitch(
+                    value: _emailNotifications,
+                    onChanged: (value) {
+                      setState(() => _emailNotifications = value);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+
+            // Units section
+            SettingsSectionCard(
+              title: 'Preferences',
+              items: [
+                SettingsItem(
+                  icon: Icons.straighten_outlined,
+                  title: 'Distance Unit',
+                  subtitle: _distanceUnit == 'km' ? 'Kilometers' : 'Miles',
+                  iconColor: DwDarkTheme.accentGreen,
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: DwDarkTheme.spacingSm,
+                      vertical: DwDarkTheme.spacingXs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: DwDarkTheme.accentGreen.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+                    ),
+                    child: Text(
+                      _distanceUnit.toUpperCase(),
+                      style: DwDarkTheme.labelSmall.copyWith(
+                        color: DwDarkTheme.accentGreen,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  onTap: () => _showDistanceUnitPicker(),
+                ),
+              ],
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+
+            // Privacy section
+            SettingsSectionCard(
+              title: 'Legal',
+              items: [
+                SettingsItem(
+                  icon: Icons.privacy_tip_outlined,
+                  title: 'Privacy Policy',
+                  iconColor: DwDarkTheme.textTertiary,
+                  onTap: () {
+                    _showComingSoon();
+                  },
+                ),
+                SettingsItem(
+                  icon: Icons.description_outlined,
+                  title: 'Terms of Service',
+                  iconColor: DwDarkTheme.textTertiary,
+                  onTap: () {
+                    _showComingSoon();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+
+            // Data section
+            SettingsSectionCard(
+              title: 'Data & Storage',
+              items: [
+                SettingsItem(
+                  icon: Icons.cleaning_services_outlined,
+                  title: 'Clear Cache',
+                  subtitle: 'Free up storage space',
+                  iconColor: DwDarkTheme.accentPurple,
+                  onTap: () {
+                    _showClearCacheDialog();
+                  },
+                ),
+                SettingsItem(
+                  icon: Icons.delete_forever_outlined,
+                  title: 'Delete Account',
+                  subtitle: 'Permanently delete your account',
+                  iconColor: DwDarkTheme.error,
+                  titleColor: DwDarkTheme.error,
+                  onTap: () {
+                    _showDeleteAccountDialog();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+
+            // App info
+            SettingsSectionCard(
+              title: 'About',
+              items: [
+                SettingsItem(
+                  icon: Icons.info_outline,
+                  title: 'Version',
+                  subtitle: '1.0.0 (1)',
+                  iconColor: DwDarkTheme.textTertiary,
+                  showChevron: false,
+                ),
+              ],
+            ),
+            const SizedBox(height: DwDarkTheme.spacingXl),
+          ],
+        ),
       ),
-      body: ListView(
-        children: [
-          // Appearance section
-          _SectionHeader(title: 'Appearance'),
-          SwitchListTile(
-            title: const Text('Dark Mode'),
-            subtitle: const Text('Use dark theme'),
-            value: _darkMode,
-            onChanged: (value) {
-              setState(() => _darkMode = value);
-              // TODO: Apply theme
-            },
-          ),
+    );
+  }
 
-          // Notifications section
-          _SectionHeader(title: 'Notifications'),
-          SwitchListTile(
-            title: const Text('Push Notifications'),
-            subtitle: const Text('Receive push notifications'),
-            value: _pushNotifications,
-            onChanged: (value) {
-              setState(() => _pushNotifications = value);
-            },
-          ),
-          SwitchListTile(
-            title: const Text('Email Notifications'),
-            subtitle: const Text('Receive email updates'),
-            value: _emailNotifications,
-            onChanged: (value) {
-              setState(() => _emailNotifications = value);
-            },
-          ),
+  Widget _buildSwitch({
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Switch(
+      value: value,
+      onChanged: onChanged,
+      activeColor: DwDarkTheme.accentGreen,
+      activeTrackColor: DwDarkTheme.accentGreen.withOpacity(0.3),
+      inactiveThumbColor: DwDarkTheme.textMuted,
+      inactiveTrackColor: DwDarkTheme.surfaceHighlight,
+    );
+  }
 
-          // Units section
-          _SectionHeader(title: 'Units'),
-          ListTile(
-            title: const Text('Distance Unit'),
-            subtitle: Text(_distanceUnit == 'km' ? 'Kilometers' : 'Miles'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (context) => SimpleDialog(
-                  title: const Text('Distance Unit'),
-                  children: [
-                    RadioListTile(
-                      title: const Text('Kilometers'),
-                      value: 'km',
-                      groupValue: _distanceUnit,
-                      onChanged: (value) {
-                        setState(() => _distanceUnit = value!);
-                        Navigator.pop(context);
-                      },
-                    ),
-                    RadioListTile(
-                      title: const Text('Miles'),
-                      value: 'mi',
-                      groupValue: _distanceUnit,
-                      onChanged: (value) {
-                        setState(() => _distanceUnit = value!);
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
+  void _showDistanceUnitPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: DwDarkTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(DwDarkTheme.radiusLg),
+        ),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: DwDarkTheme.cardBorder,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+            Text(
+              'Distance Unit',
+              style: DwDarkTheme.headlineSmall,
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+            _buildUnitOption(
+              title: 'Kilometers',
+              value: 'km',
+              isSelected: _distanceUnit == 'km',
+            ),
+            const SizedBox(height: DwDarkTheme.spacingSm),
+            _buildUnitOption(
+              title: 'Miles',
+              value: 'mi',
+              isSelected: _distanceUnit == 'mi',
+            ),
+            const SizedBox(height: DwDarkTheme.spacingMd),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnitOption({
+    required String title,
+    required String value,
+    required bool isSelected,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() => _distanceUnit = value);
+          Navigator.pop(context);
+        },
+        borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
+        child: Container(
+          padding: const EdgeInsets.all(DwDarkTheme.spacingMd),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? DwDarkTheme.accent.withOpacity(0.15)
+                : DwDarkTheme.surfaceHighlight,
+            borderRadius: BorderRadius.circular(DwDarkTheme.radiusMd),
+            border: Border.all(
+              color: isSelected
+                  ? DwDarkTheme.accent.withOpacity(0.5)
+                  : DwDarkTheme.cardBorder,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: DwDarkTheme.bodyLarge.copyWith(
+                    color: isSelected
+                        ? DwDarkTheme.accent
+                        : DwDarkTheme.textPrimary,
+                  ),
+                ),
+              ),
+              if (isSelected)
+                Icon(
+                  Icons.check_circle,
+                  color: DwDarkTheme.accent,
+                  size: 20,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showClearCacheDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: DwDarkTheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DwDarkTheme.radiusLg),
+        ),
+        title: Text(
+          'Clear Cache',
+          style: DwDarkTheme.headlineSmall,
+        ),
+        content: Text(
+          'This will clear all cached data. You may need to reload some content.',
+          style: DwDarkTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: DwDarkTheme.labelLarge.copyWith(
+                color: DwDarkTheme.textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Cache cleared'),
+                  backgroundColor: DwDarkTheme.accentGreen,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
+                  ),
                 ),
               );
             },
-          ),
-
-          // Privacy section
-          _SectionHeader(title: 'Privacy'),
-          ListTile(
-            title: const Text('Privacy Policy'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Open privacy policy
-            },
-          ),
-          ListTile(
-            title: const Text('Terms of Service'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Open terms
-            },
-          ),
-
-          // Data section
-          _SectionHeader(title: 'Data'),
-          ListTile(
-            title: const Text('Clear Cache'),
-            subtitle: const Text('Free up storage space'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Clear cache
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cache cleared')),
-              );
-            },
-          ),
-          ListTile(
-            title: Text(
-              'Delete Account',
-              style: TextStyle(color: DwColors.error),
+            child: Text(
+              'Clear',
+              style: DwDarkTheme.labelLarge.copyWith(
+                color: DwDarkTheme.accent,
+              ),
             ),
-            subtitle: const Text('Permanently delete your account'),
-            trailing: Icon(Icons.chevron_right, color: DwColors.error),
-            onTap: () {
-              // TODO: Delete account flow
-            },
-          ),
-
-          // App info
-          _SectionHeader(title: 'About'),
-          ListTile(
-            title: const Text('Version'),
-            subtitle: const Text('1.0.0 (1)'),
           ),
         ],
       ),
     );
   }
-}
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        DwSpacing.md,
-        DwSpacing.lg,
-        DwSpacing.md,
-        DwSpacing.sm,
+  void _showDeleteAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: DwDarkTheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DwDarkTheme.radiusLg),
+        ),
+        title: Text(
+          'Delete Account',
+          style: DwDarkTheme.headlineSmall.copyWith(
+            color: DwDarkTheme.error,
+          ),
+        ),
+        content: Text(
+          'This action cannot be undone. All your data will be permanently deleted.',
+          style: DwDarkTheme.bodyMedium,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: DwDarkTheme.labelLarge.copyWith(
+                color: DwDarkTheme.textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showComingSoon();
+            },
+            child: Text(
+              'Delete',
+              style: DwDarkTheme.labelLarge.copyWith(
+                color: DwDarkTheme.error,
+              ),
+            ),
+          ),
+        ],
       ),
-      child: Text(
-        title,
-        style: DwTextStyles.titleSmall.copyWith(
-          color: DwColors.primary,
+    );
+  }
+
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Coming soon'),
+        backgroundColor: DwDarkTheme.surfaceElevated,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(DwDarkTheme.radiusSm),
         ),
       ),
     );
